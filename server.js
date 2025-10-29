@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const NodeCache = require('node-cache');
 const app = express();
-const cache = new NodeCache({ stdTTL: 60 });
+const cache = new NodeCache({ stdTTL: 120 });
 
 const AFAD_URL = 'https://deprem.afad.gov.tr/EventData/GetEventsByFilter';
 
