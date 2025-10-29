@@ -28,13 +28,13 @@ app.get('/', async (req, res) => {
       return res.json(cached);
     }
 
-    // Tarih aralığı (son 24 saat)
+    // 🔸 Tarih aralığı (son 30 gün)
     const now = new Date();
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const payload = {
       EventSearchFilterList: [
-        { FilterType: 8, Value: yesterday.toISOString() },
+        { FilterType: 8, Value: thirtyDaysAgo.toISOString() },
         { FilterType: 9, Value: now.toISOString() }
       ],
       Skip: 0,
@@ -52,7 +52,7 @@ app.get('/', async (req, res) => {
 
     // Veriyi kaydet ve döndür
     cache.set('data', response.data);
-    console.log('🌍 AFAD verisi başarıyla alındı');
+    console.log('🌍 AFAD verisi (30 günlük) başarıyla alındı');
     res.json(response.data);
 
   } catch (error) {
