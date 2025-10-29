@@ -3,19 +3,14 @@ const axios = require('axios');
 const NodeCache = require('node-cache');
 const app = express();
 
-// ====== Ayarlar ======
-const PORT = process.env.PORT || 3000;
-const CACHE_SECONDS = 120;                 // 2 dk cache
-const DEFAULT_DAYS = 30;                   // Varsayılan 30 gün
-const MAX_TAKE = 500;                      // AFAD'a tek seferde istenecek kayıt
+const CACHE_SECONDS = 120;
+const DEFAULT_DAYS = 30;
+const MAX_TAKE = 500;
 const AFAD_URL = 'https://deprem.afad.gov.tr/EventData/GetEventsByFilter';
-
-// Cache ve CORS
 const cache = new NodeCache({ stdTTL: CACHE_SECONDS });
+
 app.use((req, res, next) => {
-  // Basit log
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  // Geniş CORS (frontend farklı domainde çalışabilsin)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -23,12 +18,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Yardımcı: AFAD isteği (verilen tarih aralığıyla)
 async function fetchAfadRange(startISO, endISO, take = MAX_TAKE) {
   const payload = {
     EventSearchFilterList: [
-      { FilterType: 8, Value: startISO }, // start
-      { FilterType: 9, Value: endISO }    // end
+      { FilterType: 8, Value: startISO },
+      { FilterType: 9, Value: endISO }
     ],
     Skip: 0,
     Take: take,
@@ -41,7 +35,7 @@ async function fetchAfadRange(startISO, endISO, take = MAX_TAKE) {
   return response.data;
 }
 
-// === 1) Eski rota (geriye uyum) — her zaman 30 gün getirir ===
+// === Rotalar ===
 app.get('/', async (req, res) => {
   try {
     const cacheKey = 'afad_30days';
@@ -62,11 +56,8 @@ app.get('/', async (req, res) => {
   }
 });
 
-// === 2) Esnek rota — parametre destekli (isteğe bağlı filtreleme)
 app.get('/api/events', async (req, res) => {
   try {
-    // Query parametreleri (hepsi opsiyonel)
-    // ?days=30&minMag=3.5&limit=200
     const days = Math.max(1, parseInt(req.query.days || DEFAULT_DAYS, 10));
     const minMag = req.query.minMag ? parseFloat(req.query.minMag) : null;
     const limit = Math.min(MAX_TAKE, Math.max(10, parseInt(req.query.limit || MAX_TAKE, 10)));
@@ -77,7 +68,6 @@ app.get('/api/events', async (req, res) => {
     const cached = cache.get(cacheKey);
     if (cached) {
       console.log(`✅ Cache (${days} gün) kullanıldı`);
-      // Cache'de varsa burada da minMag uygulayalım (hafif sunucu filtresi)
       let result = cached;
       if (minMag && Array.isArray(result.eventList)) {
         result = {
@@ -89,8 +79,6 @@ app.get('/api/events', async (req, res) => {
     }
 
     const data = await fetchAfadRange(start.toISOString(), now.toISOString(), limit);
-
-    // İsteğe bağlı sunucu tarafı minMag filtresi
     let finalData = data;
     if (minMag && Array.isArray(data.eventList)) {
       finalData = {
@@ -99,7 +87,7 @@ app.get('/api/events', async (req, res) => {
       };
     }
 
-    cache.set(cacheKey, data); // ham veriyi cache'le
+    cache.set(cacheKey, data);
     console.log(`🌍 AFAD verisi (${days} gün) alındı`);
     res.json(finalData);
   } catch (error) {
@@ -108,12 +96,9 @@ app.get('/api/events', async (req, res) => {
   }
 });
 
-// Sağlık kontrolü
 app.get('/health', (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// Sunucu
-app.listen(PORT, () => {
-  console.log(`🚀 Sunucu ${PORT} portunda çalışıyor (varsayılan 30 gün, cache ${CACHE_SECONDS}s).`);
-});
+// 🔹 Vercel için express instance'ı export ediyoruz:
+module.exports = app;
