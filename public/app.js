@@ -1,12 +1,11 @@
-// ===== Sismograf Frontend (Revizyon 5.2) =====
-// 👑 Majesteleri'nin talimatlarıyla: Yerel saat düzeltmesi eklendi
+// ===== Sismograf Frontend (Revizyon 5.3) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD UTC zaman düzeltmesi yapıldı
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD formatına tam uyum (Z harfi kaldırıldı + Yerel saat desteği)
+// 🧭 AFAD formatına tam uyum (UTC, Z harfi kaldırıldı)
 function toAfadTime(d) {
-  const tzOffset = d.getTimezoneOffset() * 60000; // Dakikayı milisaniyeye çevir
-  const localTime = new Date(d - tzOffset);        // Yerel saate dönüştür
-  return localTime.toISOString().split(".")[0].replace("Z", "");
+  // AFAD UTC zamanı bekliyor ama "Z" harfini istemiyor
+  return new Date(d.getTime()).toISOString().split(".")[0].replace("Z", "");
 }
 
 // Global değişkenler
