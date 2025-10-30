@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 1) =====
-// 👑 Majesteleri'nin talimatlarıyla: butonlu filtreleme, 2dk yenileme, sayfalama
+// ===== Sismograf Frontend (Revizyon 2) =====
+// 👑 Majesteleri'nin talimatlarıyla: sadeleştirilmiş parametre yapısı, tarih aralığı desteği, sabit sıralama
 function qsel(id) { return document.getElementById(id); }
 function toAfadTime(d) { return new Date(d).toISOString().split(".")[0]; }
 
@@ -8,22 +8,28 @@ let fullData = [];          // AFAD'tan çekilen tam liste (250 kayıt)
 let filteredData = [];      // Filtrelenmiş liste (aktif şiddet aralıklarına göre)
 let currentPage = 1;        // Aktif sayfa
 const perPage = 15;         // Sayfa başı 15 kayıt
-const autoRefreshMS = 120000; // 2 dakika (120000 ms)
-let autoTimer = null;       // Otomatik yenileme zamanlayıcısı
+const autoRefreshMS = 120000; // 2 dakika
+let autoTimer = null;
 
 // ===================== PARAM HAZIRLAMA =====================
 function buildParams() {
   const p = new URLSearchParams();
-  const days = parseInt(qsel("days").value || "7", 10);
-  const end = qsel("end")?.value ? new Date(qsel("end").value) : new Date();
-  const start = qsel("start")?.value ? new Date(qsel("start").value) : new Date(Date.now() - days * 86400000);
+  const limit = 250; // Sabit kayıt sayısı
+
+  // 🔸 Tarih aralığı kontrolü
+  const startInput = qsel("startDate")?.value;
+  const endInput = qsel("endDate")?.value;
+
+  const end = endInput ? new Date(endInput) : new Date();
+  const start = startInput
+    ? new Date(startInput)
+    : new Date(Date.now() - 30 * 86400000); // Varsayılan: son 30 gün
 
   p.set("start", toAfadTime(start));
   p.set("end", toAfadTime(end));
-  p.set("limit", "250"); // Sabit limit
-
-  if (qsel("orderby").value) p.set("orderby", qsel("orderby").value);
-  p.set("format", "json"); // Sabit format
+  p.set("limit", limit.toString());
+  p.set("orderby", "timedesc"); // 🔒 En son depremler üstte
+  p.set("format", "json");      // 🔒 JSON format sabit
   return p;
 }
 
@@ -88,7 +94,6 @@ function renderPagination() {
   const footer = document.querySelector("footer");
   footer.innerHTML = `<small>Sayfa ${currentPage}/${totalPages} • Toplam ${filteredData.length} kayıt</small>`;
 
-  // Basit ileri/geri butonları
   if (totalPages > 1) {
     const prevBtn = document.createElement("button");
     const nextBtn = document.createElement("button");
