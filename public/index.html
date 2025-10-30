@@ -3,19 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sismograf | Canlı Deprem Verileri (AFAD)</title>
+  <title>Sismograf | Canlı Deprem Verileri</title>
+
+  <!-- Lato fontu eklendi -->
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
+<body style="font-family: 'Lato', sans-serif;">
   <main class="wrap">
-    <h1>Sismograf | Canlı Deprem Verileri</h1>
+
+    <!-- 🟠 Başlık tamamen kaldırıldı -->
 
     <section class="controls">
       <div class="row">
-        <label>Gün (otomatik tarih): <input id="days" type="number" value="7" min="1" max="365"></label>
-        <label>Min M: <input id="minmag" type="number" step="0.1" placeholder="örn. 3.5"></label>
-        <label>Max M: <input id="maxmag" type="number" step="0.1"></label>
-        <label>Limit: <input id="limit" type="number" value="500" min="0" max="1000"></label>
+        <label>Gün (otomatik tarih): 
+          <input id="days" type="number" value="30" min="1" max="365">
+        </label>
+
+        <!-- 🔸 Yeni: Şiddet Aralığı Butonları -->
+        <div class="mag-filters">
+          <span class="filter-label">Şiddet Aralığı:</span>
+          <button class="mag-btn" data-range="0-2">0–2</button>
+          <button class="mag-btn" data-range="2-4">2–4</button>
+          <button class="mag-btn" data-range="4-6">4–6</button>
+          <button class="mag-btn" data-range="6-8">6–8</button>
+          <button class="mag-btn" data-range="8+">8+</button>
+        </div>
+
+        <!-- 🔒 Limit kaldırıldı -->
+        <!-- 🔒 Format kaldırıldı -->
+
         <label>Order: 
           <select id="orderby">
             <option value="timedesc">timedesc</option>
@@ -24,17 +41,9 @@
             <option value="magnitudedesc">magnitudedesc</option>
           </select>
         </label>
-        <label>Format:
-          <select id="format">
-            <option value="json">json</option>
-            <option value="geojson">geojson</option>
-            <option value="csv">csv</option>
-            <option value="xml">xml</option>
-            <option value="kml">kml</option>
-          </select>
-        </label>
       </div>
 
+      <!-- Diğer filtre alanları korunuyor -->
       <details>
         <summary>Coğrafi Filtreler (dikdörtgen <em>veya</em> radyal)</summary>
         <div class="row">
@@ -55,7 +64,9 @@
         <div class="row">
           <label>mindepth <input id="mindepth" type="number" step="0.1"></label>
           <label>maxdepth <input id="maxdepth" type="number" step="0.1"></label>
-          <label>magtype (case-sensitive) <input id="magtype" placeholder="ML, Ms, mb, md, Mw, Ml, MS, Mwp"></label>
+          <label>magtype (case-sensitive) 
+            <input id="magtype" placeholder="ML, Ms, mb, md, Mw, Ml, MS, Mwp">
+          </label>
         </div>
       </details>
 
@@ -84,15 +95,13 @@
     </section>
 
     <footer>
-      <small>Kaynak: AFAD Deprem Dairesi — `/apiv2/event/filter` (GET) • Döküman referansı mevcuttur. </small>
+      <small>Kaynak: AFAD Deprem Dairesi — `/apiv2/event/filter` (GET) • Döküman referansı mevcuttur.</small>
     </footer>
   </main>
 
   <script>
-    // Sadece burayı değiştirin:
-    const API_BASE = "/api/events"; // örn: "https://<proje-adınız>.vercel.app/api/events"
+    const API_BASE = "/api/events";
   </script>
   <script src="./app.js"></script>
 </body>
 </html>
-
