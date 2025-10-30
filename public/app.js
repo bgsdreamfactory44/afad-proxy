@@ -1,5 +1,7 @@
-// ===== Sismograf Frontend (Revizyon 4) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD tarih biçimi düzeltildi, spinner görünür hale getirildi
+// ===== Sismograf Frontend (Revizyon 5) =====
+// 👑 Majesteleri'nin talimatlarıyla: Türkçe tablo başlıkları, gereksiz alanlar gizlendi,
+// en güncel kayıtlar tutuluyor, eventID ve teknik alanlar backend’de kaldı.
+
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD formatına tam uyum (Z harfi kaldırıldı)
@@ -25,7 +27,6 @@ function showSpinner() {
   }
   status.querySelector(".spinner").style.display = "inline-block";
 }
-
 function hideSpinner() {
   const status = qsel("status");
   const spinner = status.querySelector(".spinner");
@@ -54,57 +55,89 @@ function buildParams() {
 }
 
 // ===================== HATA YÖNETİMİ =====================
-function renderError(msg) {
-  qsel("errorBox").textContent = `⚠️ ${msg}`;
-}
-function clearError() {
-  qsel("errorBox").textContent = "";
-}
+function renderError(msg) { qsel("errorBox").textContent = `⚠️ ${msg}`; }
+function clearError() { qsel("errorBox").textContent = ""; }
 
-// ===================== TABLO =====================
-function autoColumns(list) {
-  const cols = new Set();
-  list.forEach(obj => Object.keys(obj || {}).forEach(k => cols.add(k)));
-  return Array.from(cols);
-}
+// ===================== VERİYİ NORMALİZE ET =====================
+function normalizeToList(json) {
+  const data = json?.data;
+  let list = [];
 
-function setHeader(cols) {
-  const thead = qsel("thead");
-  thead.innerHTML = "";
-  const tr = document.createElement("tr");
-  cols.forEach(c => {
-    const th = document.createElement("th");
-    th.textContent = c;
-    tr.appendChild(th);
+  if (Array.isArray(data?.eventList)) list = data.eventList;
+  else if (Array.isArray(data?.features))
+    list = data.features.map(f => ({ ...(f.properties || {}), geometry: f.geometry || null }));
+  else if (Array.isArray(data)) list = data;
+  else if (data && typeof data === "object") list = [data];
+
+  // 👑 Majesteleri: Sadece en güncel kayıtlar tutulacak
+  const latestById = {};
+  list.forEach(item => {
+    if (!item.eventID) return;
+    const existing = latestById[item.eventID];
+    if (!existing || new Date(item.lastUpdateDate) > new Date(existing.lastUpdateDate)) {
+      latestById[item.eventID] = item;
+    }
   });
-  thead.appendChild(tr);
+
+  // 👑 Majesteleri: eventID, type, isEventUpdate, lastUpdateDate backend’de kalsın
+  const cleanList = Object.values(latestById).map(ev => {
+    const { eventID, type, isEventUpdate, lastUpdateDate, ...rest } = ev;
+    return rest;
+  });
+
+  return cleanList;
 }
 
-function setRows(cols, list) {
+// ===================== TABLOYU GÜNCELLE =====================
+function renderTable() {
+  const list = filteredData.slice((currentPage - 1) * perPage, currentPage * perPage);
   const tbody = qsel("tbody");
+  const thead = qsel("thead");
   tbody.innerHTML = "";
+  thead.innerHTML = "";
+
+  if (!list.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td colspan='7'>Veri bulunamadı.</td>";
+    tbody.appendChild(tr);
+    return;
+  }
+
+  // 👑 Majesteleri: Türkçe ve anlamlı başlıklar
+  const headers = [
+    { key: "eventDate", label: "Tarih ve Saat" },
+    { key: "location", label: "Bölge" },
+    { key: "lat", label: "Enlem" },
+    { key: "lon", label: "Boylam" },
+    { key: "depth", label: "Derinlik (km)" },
+    { key: "magnitude", label: "Büyüklük (Mw)" },
+    { key: "rms", label: "RMS (ölçüm hatası)" },
+  ];
+
+  // Tablo başlıklarını oluştur
+  const trHead = document.createElement("tr");
+  headers.forEach(h => {
+    const th = document.createElement("th");
+    th.textContent = h.label;
+    trHead.appendChild(th);
+  });
+  thead.appendChild(trHead);
+
+  // Satırları oluştur
   list.forEach(obj => {
     const tr = document.createElement("tr");
-    cols.forEach(c => {
+    headers.forEach(h => {
       const td = document.createElement("td");
-      let val = obj && Object.prototype.hasOwnProperty.call(obj, c) ? obj[c] : "";
-      if (typeof val === "object" && val !== null) val = JSON.stringify(val);
-      td.textContent = val ?? "";
+      let val = obj[h.key] ?? "";
+      if (h.key === "eventDate") val = new Date(val).toLocaleString("tr-TR");
+      if (h.key === "depth" && val) val = `${val} km`;
+      td.textContent = val;
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
   });
-}
 
-// ===================== AFAD VERİSİNİ NORMALİZE ET =====================
-function normalizeToList(json) {
-  const data = json?.data;
-  if (Array.isArray(data?.eventList)) return data.eventList;
-  if (Array.isArray(data?.features))
-    return data.features.map(f => ({ ...(f.properties || {}), geometry: f.geometry || null }));
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === "object") return [data];
-  return [];
+  renderPagination();
 }
 
 // ===================== SAYFALAMA =====================
@@ -120,34 +153,18 @@ function renderPagination() {
     nextBtn.textContent = "Sonraki →";
     prevBtn.disabled = currentPage === 1;
     nextBtn.disabled = currentPage === totalPages;
-
     prevBtn.onclick = () => { currentPage--; renderTable(); };
     nextBtn.onclick = () => { currentPage++; renderTable(); };
-
     footer.appendChild(document.createElement("br"));
     footer.appendChild(prevBtn);
     footer.appendChild(nextBtn);
   }
 }
 
-// ===================== TABLOYU GÜNCELLE =====================
-function renderTable() {
-  const list = filteredData.slice((currentPage - 1) * perPage, currentPage * perPage);
-  const cols = autoColumns(list);
-  setHeader(cols);
-  setRows(cols, list);
-  renderPagination();
-}
-
 // ===================== ŞİDDET FİLTRESİ =====================
 function applyMagnitudeFilter() {
-  const activeRanges = Array.from(document.querySelectorAll(".mag-btn.active"))
-    .map(btn => btn.dataset.range);
-
-  if (activeRanges.length === 0) {
-    filteredData = fullData;
-    return;
-  }
+  const activeRanges = Array.from(document.querySelectorAll(".mag-btn.active")).map(btn => btn.dataset.range);
+  if (activeRanges.length === 0) { filteredData = fullData; return; }
 
   filteredData = fullData.filter(ev => {
     const mag = parseFloat(ev.magnitude);
@@ -166,20 +183,17 @@ function applyMagnitudeFilter() {
 async function fetchAndRender() {
   clearError();
   showSpinner();
-
   const params = buildParams();
   const url = `${API_BASE}?${params.toString()}`;
 
   try {
     const r = await fetch(url);
     const json = await r.json().catch(() => ({}));
-
     if (!r.ok || json.success === false) {
       const detail = json?.detail || `HTTP ${r.status}`;
       renderError(`${json?.code || "ERROR"}: ${detail}`);
       return;
     }
-
     fullData = normalizeToList(json);
     applyMagnitudeFilter();
     currentPage = 1;
@@ -203,7 +217,6 @@ function setupMagnitudeButtons() {
     });
   });
 }
-
 function startAutoRefresh() {
   if (autoTimer) clearInterval(autoTimer);
   autoTimer = setInterval(fetchAndRender, autoRefreshMS);
@@ -215,5 +228,4 @@ window.addEventListener("DOMContentLoaded", () => {
   fetchAndRender();
   startAutoRefresh();
 });
-
 document.getElementById("fetchBtn").addEventListener("click", fetchAndRender);
