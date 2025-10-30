@@ -1,4 +1,4 @@
-/* ===== BG’s Dream Factory | Sismograf Revizyon 3.1 (Kırmızı Footer Butonları) ===== */
+/* ===== BG’s Dream Factory | Sismograf Revizyon 3.2 (Bütünleşik Tablo Yapısı) ===== */
 :root {
   --brand: #c8102e;
   --ink: #141414;
@@ -29,7 +29,7 @@ body {
 /* Kontrol paneli */
 .controls {
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: 16px 16px 0 0;
   padding: 18px 20px;
   background: #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
@@ -120,6 +120,7 @@ body {
 /* Buton ve Spinner */
 .actions {
   margin-top: 20px;
+  margin-bottom: 20px; /* 🔸 Tabloyla arasını açtık */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,11 +161,14 @@ body {
 
 /* Tablo */
 .table-wrap {
-  margin-top: 24px;
-  border-radius: 16px;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0 0 16px 16px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 24px; /* 🔸 Footer ile arası açıldı */
 }
 
 table {
@@ -186,7 +190,7 @@ thead th {
 }
 
 tbody td {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #ddd; /* 🔸 Satır ayrımı daha net */
   padding: 10px;
   font-size: 13px;
 }
@@ -197,14 +201,14 @@ tr:hover td {
 
 /* Footer */
 footer {
-  margin: 18px 0 30px;
   text-align: center;
   color: var(--muted);
   font-size: 13px;
   font-family: "Lato", sans-serif;
+  padding-bottom: 20px;
 }
 
-/* 🔴 Yeni: Footer Butonları */
+/* 🔴 Footer Butonları */
 footer button {
   background: var(--brand);
   color: #fff;
