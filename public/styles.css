@@ -1,4 +1,4 @@
-/* ===== BG’s Dream Factory | Sismograf Revizyon 3.2 (Bütünleşik Tablo Yapısı) ===== */
+/* ===== BG’s Dream Factory | Sismograf Revizyon 3.3 (Birleşik Kutu, Ferah Düzen) ===== */
 :root {
   --brand: #c8102e;
   --ink: #141414;
@@ -8,9 +8,7 @@
   --bg: #ffffff;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -26,20 +24,20 @@ body {
   padding: 0 16px;
 }
 
-/* Kontrol paneli */
+/* Kontrol paneli (Header) */
 .controls {
   border: 1px solid var(--line);
-  border-radius: 16px 16px 0 0;
-  padding: 18px 20px;
+  border-radius: 16px;
+  padding: 24px 24px;
   background: #fff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  gap: 16px; /* 🆕 Header elemanları arasında ferahlık */
 }
 
-/* Üst filtreler */
 .controls .row {
   display: flex;
   flex-wrap: wrap;
@@ -119,12 +117,10 @@ body {
 
 /* Buton ve Spinner */
 .actions {
-  margin-top: 20px;
-  margin-bottom: 20px; /* 🔸 Tabloyla arasını açtık */
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
+  justify-content: center; /* 🆕 Tüm header ortalandı */
+  gap: 16px; /* 🆕 Buton ile filtre arasında nefes */
 }
 
 #fetchBtn {
@@ -153,30 +149,27 @@ body {
   height: 22px;
   animation: spin 1s linear infinite;
 }
-
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-/* Tablo */
+/* Tablo + Footer birleşik kutu */
 .table-wrap {
-  border-left: 1px solid var(--line);
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  border-radius: 0 0 16px 16px;
+  margin: 0 16px 24px; /* 🆕 Kenarlarda alan bırakıldı */
+  border-radius: 16px;
   overflow: hidden;
   background: #fff;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px; /* 🔸 Footer ile arası açıldı */
+  border: 1px solid var(--line); /* 🆕 İnce çerçeve */
 }
 
 table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse; /* 🆕 Hücreler arası çizgi */
   font-family: "Lato", sans-serif;
   font-size: 14px;
+  border-bottom: 1px solid var(--line);
 }
 
 thead th {
@@ -190,25 +183,31 @@ thead th {
 }
 
 tbody td {
-  border-bottom: 1px solid #ddd; /* 🔸 Satır ayrımı daha net */
+  border-bottom: 1px solid #f0f0f0;
   padding: 10px;
   font-size: 13px;
 }
 
-tr:hover td {
-  background: #fff6f6;
-}
+tr:hover td { background: #fff6f6; }
 
-/* Footer */
+/* Footer tablo kutusu içinde */
 footer {
   text-align: center;
   color: var(--muted);
   font-size: 13px;
   font-family: "Lato", sans-serif;
-  padding-bottom: 20px;
+  padding: 18px 0 24px;
+  margin: 0;
+  background: #fff;
+  border-top: 1px solid var(--line);
 }
 
-/* 🔴 Footer Butonları */
+footer small {
+  display: block;
+  margin-top: 14px; /* 🆕 Tablo ile footer yazısı arası boşluk */
+  margin-bottom: 10px; /* 🆕 Yazı ile butonlar arası mesafe */
+}
+
 footer button {
   background: var(--brand);
   color: #fff;
@@ -237,27 +236,10 @@ footer button:disabled {
 
 /* 🔹 Mobil Uyumluluk */
 @media (max-width: 768px) {
-  .controls .row {
-    flex-direction: column;
-  }
-
-  .date-filters {
-    flex-direction: column;
-  }
-
-  #fetchBtn {
-    width: 100%;
-  }
-
-  .mag-filters {
-    justify-content: center;
-  }
-
-  table {
-    font-size: 12px;
-  }
-
-  thead th, tbody td {
-    padding: 8px;
-  }
+  .controls .row { flex-direction: column; }
+  .date-filters { flex-direction: column; }
+  #fetchBtn { width: 100%; }
+  .mag-filters { justify-content: center; }
+  table { font-size: 12px; }
+  thead th, tbody td { padding: 8px; }
 }
