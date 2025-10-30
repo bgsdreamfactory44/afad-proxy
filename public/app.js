@@ -1,10 +1,9 @@
 // ===== Sismograf Frontend (Revizyon 5.3) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD UTC zaman düzeltmesi yapıldı
+// 👑 Majesteleri'nin talimatlarıyla: AFAD UTC + cache bypass + 2500 limit
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD formatına tam uyum (UTC, Z harfi kaldırıldı)
 function toAfadTime(d) {
-  // AFAD UTC zamanı bekliyor ama "Z" harfini istemiyor
   return new Date(d.getTime()).toISOString().split(".")[0].replace("Z", "");
 }
 
@@ -36,7 +35,7 @@ function hideSpinner() {
 // ===================== PARAM HAZIRLAMA =====================
 function buildParams() {
   const p = new URLSearchParams();
-  const limit = 250;
+  const limit = 2500; // 🔸 GÜNCELLENDİ: AFAD'ın izin verdiği maksimum değer
 
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
@@ -192,7 +191,7 @@ async function fetchAndRender() {
   showSpinner();
 
   const params = buildParams();
-  const url = `${API_BASE}?${params.toString()}`;
+  const url = `${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`; // 🔸 GÜNCELLENDİ: cache bypass
 
   try {
     const r = await fetch(url);
@@ -205,6 +204,9 @@ async function fetchAndRender() {
     }
 
     fullData = normalizeToList(json);
+    // Güvence: en yeni en üstte
+    fullData.sort((a, b) => new Date(b.date || b.eventDate) - new Date(a.date || a.eventDate));
+
     applyMagnitudeFilter();
     currentPage = 1;
     renderTable();
