@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 5) =====
-// 👑 Majesteleri'nin talimatlarıyla: Türkçe başlıklar, gereksiz sütunlar gizlendi
+// ===== Sismograf Frontend (Revizyon 5.1) =====
+// 👑 Majesteleri'nin talimatlarıyla: Türkçe başlıklar güncellendi
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD formatına tam uyum (Z harfi kaldırıldı)
@@ -67,7 +67,14 @@ function translateColumnName(key) {
     latitude: "Enlem",
     longitude: "Boylam",
     depth: "Derinlik (km)",
-    rms: "RMS (Kök Ortalama Kare) Ölçüm Doğruluğu"
+    rms: "RMS (Ölçüm Doğruluğu)",
+    location: "Konum",
+    magnitude: "Şiddet",
+    country: "Ülke",
+    province: "Şehir",
+    district: "İlçe",
+    neighborhood: "Bölge",
+    date: "Tarih"
   };
   return map[key] || key;
 }
