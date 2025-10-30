@@ -1,35 +1,49 @@
-// ===== Sismograf Frontend (Revizyon 2) =====
-// 👑 Majesteleri'nin talimatlarıyla: sadeleştirilmiş parametre yapısı, tarih aralığı desteği, sabit sıralama
+// ===== Sismograf Frontend (Revizyon 3) =====
+// 👑 Majesteleri'nin talimatlarıyla: spinner eklenmiş, yükleme metinleri kaldırılmış
 function qsel(id) { return document.getElementById(id); }
 function toAfadTime(d) { return new Date(d).toISOString().split(".")[0]; }
 
 // Global değişkenler
-let fullData = [];          // AFAD'tan çekilen tam liste (250 kayıt)
-let filteredData = [];      // Filtrelenmiş liste (aktif şiddet aralıklarına göre)
-let currentPage = 1;        // Aktif sayfa
-const perPage = 15;         // Sayfa başı 15 kayıt
-const autoRefreshMS = 120000; // 2 dakika
+let fullData = [];
+let filteredData = [];
+let currentPage = 1;
+const perPage = 15;
+const autoRefreshMS = 120000;
 let autoTimer = null;
+let spinnerEl = null;
+
+// ===================== SPINNER =====================
+function showSpinner() {
+  if (!spinnerEl) {
+    spinnerEl = document.createElement("div");
+    spinnerEl.className = "spinner";
+    qsel("status").appendChild(spinnerEl);
+  }
+  spinnerEl.style.display = "inline-block";
+}
+
+function hideSpinner() {
+  if (spinnerEl) spinnerEl.style.display = "none";
+}
 
 // ===================== PARAM HAZIRLAMA =====================
 function buildParams() {
   const p = new URLSearchParams();
-  const limit = 250; // Sabit kayıt sayısı
+  const limit = 250;
 
-  // 🔸 Tarih aralığı kontrolü
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
 
   const end = endInput ? new Date(endInput) : new Date();
   const start = startInput
     ? new Date(startInput)
-    : new Date(Date.now() - 30 * 86400000); // Varsayılan: son 30 gün
+    : new Date(Date.now() - 30 * 86400000);
 
   p.set("start", toAfadTime(start));
   p.set("end", toAfadTime(end));
   p.set("limit", limit.toString());
-  p.set("orderby", "timedesc"); // 🔒 En son depremler üstte
-  p.set("format", "json");      // 🔒 JSON format sabit
+  p.set("orderby", "timedesc");
+  p.set("format", "json");
   return p;
 }
 
@@ -76,13 +90,12 @@ function setRows(cols, list) {
   });
 }
 
-// ===================== AFAD VERİLERİNİ NORMALİZE ET =====================
+// ===================== NORMALİZE ET =====================
 function normalizeToList(json) {
   const data = json?.data;
   if (Array.isArray(data?.eventList)) return data.eventList;
-  if (Array.isArray(data?.features)) {
+  if (Array.isArray(data?.features))
     return data.features.map(f => ({ ...(f.properties || {}), geometry: f.geometry || null }));
-  }
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object") return [data];
   return [];
@@ -146,7 +159,7 @@ function applyMagnitudeFilter() {
 // ===================== VERİ ÇEKME =====================
 async function fetchAndRender() {
   clearError();
-  qsel("status").textContent = "Veriler yükleniyor...";
+  showSpinner();
 
   const params = buildParams();
   const url = `${API_BASE}?${params.toString()}`;
@@ -158,7 +171,7 @@ async function fetchAndRender() {
     if (!r.ok || json.success === false) {
       const detail = json?.detail || `HTTP ${r.status}`;
       renderError(`${json?.code || "ERROR"}: ${detail}`);
-      qsel("status").textContent = "";
+      hideSpinner();
       return;
     }
 
@@ -166,14 +179,14 @@ async function fetchAndRender() {
     applyMagnitudeFilter();
     currentPage = 1;
     renderTable();
-    qsel("status").textContent = `Son ${fullData.length} deprem yüklendi (her 2 dk’da yenilenir)`;
   } catch (e) {
     renderError(e.message || "Veri alınamadı");
-    qsel("status").textContent = "";
+  } finally {
+    hideSpinner();
   }
 }
 
-// ===================== OLAYLAR VE ZAMANLAYICI =====================
+// ===================== OLAYLAR =====================
 function setupMagnitudeButtons() {
   const buttons = document.querySelectorAll(".mag-btn");
   buttons.forEach(btn => {
