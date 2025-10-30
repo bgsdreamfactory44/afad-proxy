@@ -1,11 +1,12 @@
-// ===== Sismograf Frontend (Revizyon 5.2 – Final) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD canlı yenileme optimize edildi
-
+// ===== Sismograf Frontend (Revizyon 5.2) =====
+// 👑 Majesteleri'nin talimatlarıyla: Yerel saat düzeltmesi eklendi
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD formatına tam uyum (Z harfi kaldırıldı)
+// 🧭 AFAD formatına tam uyum (Z harfi kaldırıldı + Yerel saat desteği)
 function toAfadTime(d) {
-  return new Date(d).toISOString().split(".")[0].replace("Z", "");
+  const tzOffset = d.getTimezoneOffset() * 60000; // Dakikayı milisaniyeye çevir
+  const localTime = new Date(d - tzOffset);        // Yerel saate dönüştür
+  return localTime.toISOString().split(".")[0].replace("Z", "");
 }
 
 // Global değişkenler
@@ -13,7 +14,7 @@ let fullData = [];
 let filteredData = [];
 let currentPage = 1;
 const perPage = 15;
-const autoRefreshMS = 120000; // 2 dakika
+const autoRefreshMS = 120000;
 let autoTimer = null;
 
 // ===================== SPINNER =====================
@@ -36,7 +37,7 @@ function hideSpinner() {
 // ===================== PARAM HAZIRLAMA =====================
 function buildParams() {
   const p = new URLSearchParams();
-  const limit = 2500; // 🔸 AFAD’ın izin verdiği maksimum değer
+  const limit = 250;
 
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
@@ -192,7 +193,7 @@ async function fetchAndRender() {
   showSpinner();
 
   const params = buildParams();
-  const url = `${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`; // 🔸 Yeni veri garantisi
+  const url = `${API_BASE}?${params.toString()}`;
 
   try {
     const r = await fetch(url);
