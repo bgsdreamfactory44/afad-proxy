@@ -1,1 +1,98 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sismograf | Canlı Deprem Verileri (AFAD)</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="wrap">
+    <h1>Sismograf | Canlı Deprem Verileri</h1>
+
+    <section class="controls">
+      <div class="row">
+        <label>Gün (otomatik tarih): <input id="days" type="number" value="7" min="1" max="365"></label>
+        <label>Min M: <input id="minmag" type="number" step="0.1" placeholder="örn. 3.5"></label>
+        <label>Max M: <input id="maxmag" type="number" step="0.1"></label>
+        <label>Limit: <input id="limit" type="number" value="500" min="0" max="1000"></label>
+        <label>Order: 
+          <select id="orderby">
+            <option value="timedesc">timedesc</option>
+            <option value="time">time</option>
+            <option value="magnitude">magnitude</option>
+            <option value="magnitudedesc">magnitudedesc</option>
+          </select>
+        </label>
+        <label>Format:
+          <select id="format">
+            <option value="json">json</option>
+            <option value="geojson">geojson</option>
+            <option value="csv">csv</option>
+            <option value="xml">xml</option>
+            <option value="kml">kml</option>
+          </select>
+        </label>
+      </div>
+
+      <details>
+        <summary>Coğrafi Filtreler (dikdörtgen <em>veya</em> radyal)</summary>
+        <div class="row">
+          <label>minlat <input id="minlat" type="number" step="0.0001"></label>
+          <label>maxlat <input id="maxlat" type="number" step="0.0001"></label>
+          <label>minlon <input id="minlon" type="number" step="0.0001"></label>
+          <label>maxlon <input id="maxlon" type="number" step="0.0001"></label>
+          <span class="or">— veya —</span>
+          <label>lat <input id="lat" type="number" step="0.0001"></label>
+          <label>lon <input id="lon" type="number" step="0.0001"></label>
+          <label>maxrad <input id="maxrad" type="number" step="1"></label>
+          <label>minrad (ops.) <input id="minrad" type="number" step="1"></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>Derinlik / Büyüklük Tipi</summary>
+        <div class="row">
+          <label>mindepth <input id="mindepth" type="number" step="0.1"></label>
+          <label>maxdepth <input id="maxdepth" type="number" step="0.1"></label>
+          <label>magtype (case-sensitive) <input id="magtype" placeholder="ML, Ms, mb, md, Mw, Ml, MS, Mwp"></label>
+        </div>
+      </details>
+
+      <details>
+        <summary>Gelişmiş</summary>
+        <div class="row">
+          <label>offset <input id="offset" type="number" step="1" min="0"></label>
+          <label>eventid (tekil) <input id="eventid" type="number" step="1" min="0"></label>
+          <label>start (opsiyonel) <input id="start" placeholder="YYYY-MM-DDThh:mm:ss"></label>
+          <label>end (opsiyonel) <input id="end" placeholder="YYYY-MM-DDThh:mm:ss"></label>
+        </div>
+      </details>
+
+      <div class="actions">
+        <button id="fetchBtn">Verileri Getir</button>
+        <span id="status"></span>
+      </div>
+      <div id="errorBox"></div>
+    </section>
+
+    <section class="table-wrap">
+      <table id="eqTable">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </section>
+
+    <footer>
+      <small>Kaynak: AFAD Deprem Dairesi — `/apiv2/event/filter` (GET) • Döküman referansı mevcuttur. </small>
+    </footer>
+  </main>
+
+  <script>
+    // Sadece burayı değiştirin:
+    const API_BASE = "/api/events"; // örn: "https://<proje-adınız>.vercel.app/api/events"
+  </script>
+  <script src="./app.js"></script>
+</body>
+</html>
 
