@@ -1,5 +1,6 @@
-// ===== Sismograf Frontend (Revizyon 5.1) =====
-// 👑 Majesteleri'nin talimatlarıyla: Türkçe başlıklar güncellendi
+// ===== Sismograf Frontend (Revizyon 5.2 – Final) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD canlı yenileme optimize edildi
+
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD formatına tam uyum (Z harfi kaldırıldı)
@@ -12,7 +13,7 @@ let fullData = [];
 let filteredData = [];
 let currentPage = 1;
 const perPage = 15;
-const autoRefreshMS = 120000;
+const autoRefreshMS = 120000; // 2 dakika
 let autoTimer = null;
 
 // ===================== SPINNER =====================
@@ -35,7 +36,7 @@ function hideSpinner() {
 // ===================== PARAM HAZIRLAMA =====================
 function buildParams() {
   const p = new URLSearchParams();
-  const limit = 250;
+  const limit = 2500; // 🔸 AFAD’ın izin verdiği maksimum değer
 
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
@@ -191,7 +192,7 @@ async function fetchAndRender() {
   showSpinner();
 
   const params = buildParams();
-  const url = `${API_BASE}?${params.toString()}`;
+  const url = `${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`; // 🔸 Yeni veri garantisi
 
   try {
     const r = await fetch(url);
