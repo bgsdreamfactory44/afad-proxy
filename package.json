@@ -1,13 +1,10 @@
 {
-  "name": "afad-proxy",
+  "name": "sismograf",
   "version": "1.0.0",
-  "main": "api/index.js",
-  "scripts": {
-    "start": "node api/index.js"
-  },
+  "private": true,
+  "type": "module",
   "dependencies": {
-    "express": "^4.18.2",
-    "axios": "^1.6.8",
+    "axios": "^1.7.7",
     "node-cache": "^5.1.2"
   }
 }
