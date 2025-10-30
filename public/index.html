@@ -10,53 +10,58 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body style="font-family: 'Lato', sans-serif;">
+
   <main class="wrap">
+    <!-- 🔲 Tüm bölümleri kapsayan ana kutu -->
+    <div class="main-box">
 
-    <section class="controls">
-      <div class="row">
+      <!-- 🔹 Filtre ve Güncelleme Alanı -->
+      <section class="controls">
+        <div class="row">
 
-        <!-- 🔸 Şiddet Aralığı Butonları -->
-        <div class="mag-filters">
-          <span class="filter-label">Şiddet Aralığı:</span>
-          <button class="mag-btn" data-range="0-2">0–2</button>
-          <button class="mag-btn" data-range="2-4">2–4</button>
-          <button class="mag-btn" data-range="4-6">4–6</button>
-          <button class="mag-btn" data-range="6-8">6–8</button>
-          <button class="mag-btn" data-range="8+">8+</button>
+          <!-- 🔸 Şiddet Aralığı Butonları -->
+          <div class="mag-filters">
+            <span class="filter-label">Şiddet Aralığı:</span>
+            <button class="mag-btn" data-range="0-2">0–2</button>
+            <button class="mag-btn" data-range="2-4">2–4</button>
+            <button class="mag-btn" data-range="4-6">4–6</button>
+            <button class="mag-btn" data-range="6-8">6–8</button>
+            <button class="mag-btn" data-range="8+">8+</button>
+          </div>
+
+          <!-- 🔸 Tarih Aralığı Seçimi -->
+          <div class="date-filters">
+            <span class="filter-label">Tarih Aralığı:</span>
+            <input id="startDate" type="date" />
+            <span class="to">–</span>
+            <input id="endDate" type="date" />
+          </div>
+
+          <!-- 🔹 Güncelleme Butonu -->
+          <div class="update-btn-wrap">
+            <button id="fetchBtn">Tabloyu Güncelle</button>
+            <span id="status"></span>
+          </div>
+
         </div>
 
-        <!-- 🔸 Tarih Aralığı Seçimi -->
-        <div class="date-filters">
-          <span class="filter-label">Tarih Aralığı:</span>
-          <input id="startDate" type="date" />
-          <span class="to">–</span>
-          <input id="endDate" type="date" />
-        </div>
+        <div id="errorBox"></div>
+      </section>
 
-      </div>
+      <!-- 🧮 Deprem Tablosu -->
+      <section class="table-wrap">
+        <table id="eqTable">
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </section>
 
-      <!-- 🔹 Güncelleme Butonu -->
-      <div class="actions">
-        <button id="fetchBtn">Tabloyu Güncelle</button>
-        <span id="status"></span>
-      </div>
+      <!-- 📄 Footer -->
+      <footer>
+        <small>Kaynak: AFAD Deprem Dairesi — Son 250 deprem listelenmektedir.</small>
+      </footer>
 
-      <div id="errorBox"></div>
-    </section>
-
-    <!-- 🧮 Deprem Tablosu -->
-    <section class="table-wrap">
-      <table id="eqTable">
-        <thead id="thead"></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </section>
-
-    <!-- 📄 Footer -->
-    <footer>
-      <small>Kaynak: AFAD Deprem Dairesi — Son 250 deprem listelenmektedir.</small>
-    </footer>
-
+    </div> <!-- /.main-box -->
   </main>
 
   <script>
