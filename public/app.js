@@ -1,7 +1,11 @@
-// ===== Sismograf Frontend (Revizyon 3) =====
-// 👑 Majesteleri'nin talimatlarıyla: spinner eklenmiş, yükleme metinleri kaldırılmış
+// ===== Sismograf Frontend (Revizyon 4) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD tarih biçimi düzeltildi, spinner görünür hale getirildi
 function qsel(id) { return document.getElementById(id); }
-function toAfadTime(d) { return new Date(d).toISOString().split(".")[0]; }
+
+// 🧭 AFAD formatına tam uyum (Z harfi kaldırıldı)
+function toAfadTime(d) {
+  return new Date(d).toISOString().split(".")[0].replace("Z", "");
+}
 
 // Global değişkenler
 let fullData = [];
@@ -10,20 +14,22 @@ let currentPage = 1;
 const perPage = 15;
 const autoRefreshMS = 120000;
 let autoTimer = null;
-let spinnerEl = null;
 
 // ===================== SPINNER =====================
 function showSpinner() {
-  if (!spinnerEl) {
-    spinnerEl = document.createElement("div");
-    spinnerEl.className = "spinner";
-    qsel("status").appendChild(spinnerEl);
+  const status = qsel("status");
+  if (!status.querySelector(".spinner")) {
+    const spinner = document.createElement("div");
+    spinner.className = "spinner";
+    status.appendChild(spinner);
   }
-  spinnerEl.style.display = "inline-block";
+  status.querySelector(".spinner").style.display = "inline-block";
 }
 
 function hideSpinner() {
-  if (spinnerEl) spinnerEl.style.display = "none";
+  const status = qsel("status");
+  const spinner = status.querySelector(".spinner");
+  if (spinner) spinner.style.display = "none";
 }
 
 // ===================== PARAM HAZIRLAMA =====================
@@ -55,7 +61,7 @@ function clearError() {
   qsel("errorBox").textContent = "";
 }
 
-// ===================== TABLO YAPILANDIRMA =====================
+// ===================== TABLO =====================
 function autoColumns(list) {
   const cols = new Set();
   list.forEach(obj => Object.keys(obj || {}).forEach(k => cols.add(k)));
@@ -90,7 +96,7 @@ function setRows(cols, list) {
   });
 }
 
-// ===================== NORMALİZE ET =====================
+// ===================== AFAD VERİSİNİ NORMALİZE ET =====================
 function normalizeToList(json) {
   const data = json?.data;
   if (Array.isArray(data?.eventList)) return data.eventList;
@@ -171,7 +177,6 @@ async function fetchAndRender() {
     if (!r.ok || json.success === false) {
       const detail = json?.detail || `HTTP ${r.status}`;
       renderError(`${json?.code || "ERROR"}: ${detail}`);
-      hideSpinner();
       return;
     }
 
