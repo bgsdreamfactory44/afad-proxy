@@ -1,6 +1,6 @@
-/* ===== BG’s Dream Factory | Sismograf Revizyon 3 (Kırmızı Tema, Modern Tablo, Spinner) ===== */
+/* ===== BG’s Dream Factory | Sismograf Revizyon 3.1 (Kırmızı Footer Butonları) ===== */
 :root {
-  --brand: #c8102e; /* 🔴 Yeni kırmızı ana renk */
+  --brand: #c8102e;
   --ink: #141414;
   --muted: #6b6b6b;
   --line: #eee;
@@ -39,7 +39,7 @@ body {
   text-align: center;
 }
 
-/* Üst filtreler ortalandı */
+/* Üst filtreler */
 .controls .row {
   display: flex;
   flex-wrap: wrap;
@@ -202,6 +202,33 @@ footer {
   color: var(--muted);
   font-size: 13px;
   font-family: "Lato", sans-serif;
+}
+
+/* 🔴 Yeni: Footer Butonları */
+footer button {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin: 8px 6px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  font-family: "Lato", sans-serif;
+}
+
+footer button:hover {
+  background: #a50d24;
+  transform: translateY(-1px);
+}
+
+footer button:disabled {
+  background: #ddd;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* 🔹 Mobil Uyumluluk */
