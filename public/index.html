@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sismograf | Canlı Deprem Verileri</title>
 
-  <!-- Lato fontu eklendi -->
+  <!-- Lato fontu -->
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -16,11 +16,8 @@
 
     <section class="controls">
       <div class="row">
-        <label>Gün (otomatik tarih): 
-          <input id="days" type="number" value="30" min="1" max="365">
-        </label>
 
-        <!-- 🔸 Yeni: Şiddet Aralığı Butonları -->
+        <!-- 🔸 Şiddet Aralığı Butonları -->
         <div class="mag-filters">
           <span class="filter-label">Şiddet Aralığı:</span>
           <button class="mag-btn" data-range="0-2">0–2</button>
@@ -30,63 +27,26 @@
           <button class="mag-btn" data-range="8+">8+</button>
         </div>
 
-        <!-- 🔒 Limit kaldırıldı -->
-        <!-- 🔒 Format kaldırıldı -->
+        <!-- 🔸 Tarih Aralığı Seçimi -->
+        <div class="date-filters">
+          <span class="filter-label">Tarih Aralığı:</span>
+          <input id="startDate" type="date" />
+          <span class="to">–</span>
+          <input id="endDate" type="date" />
+        </div>
 
-        <label>Order: 
-          <select id="orderby">
-            <option value="timedesc">timedesc</option>
-            <option value="time">time</option>
-            <option value="magnitude">magnitude</option>
-            <option value="magnitudedesc">magnitudedesc</option>
-          </select>
-        </label>
       </div>
 
-      <!-- Diğer filtre alanları korunuyor -->
-      <details>
-        <summary>Coğrafi Filtreler (dikdörtgen <em>veya</em> radyal)</summary>
-        <div class="row">
-          <label>minlat <input id="minlat" type="number" step="0.0001"></label>
-          <label>maxlat <input id="maxlat" type="number" step="0.0001"></label>
-          <label>minlon <input id="minlon" type="number" step="0.0001"></label>
-          <label>maxlon <input id="maxlon" type="number" step="0.0001"></label>
-          <span class="or">— veya —</span>
-          <label>lat <input id="lat" type="number" step="0.0001"></label>
-          <label>lon <input id="lon" type="number" step="0.0001"></label>
-          <label>maxrad <input id="maxrad" type="number" step="1"></label>
-          <label>minrad (ops.) <input id="minrad" type="number" step="1"></label>
-        </div>
-      </details>
-
-      <details>
-        <summary>Derinlik / Büyüklük Tipi</summary>
-        <div class="row">
-          <label>mindepth <input id="mindepth" type="number" step="0.1"></label>
-          <label>maxdepth <input id="maxdepth" type="number" step="0.1"></label>
-          <label>magtype (case-sensitive) 
-            <input id="magtype" placeholder="ML, Ms, mb, md, Mw, Ml, MS, Mwp">
-          </label>
-        </div>
-      </details>
-
-      <details>
-        <summary>Gelişmiş</summary>
-        <div class="row">
-          <label>offset <input id="offset" type="number" step="1" min="0"></label>
-          <label>eventid (tekil) <input id="eventid" type="number" step="1" min="0"></label>
-          <label>start (opsiyonel) <input id="start" placeholder="YYYY-MM-DDThh:mm:ss"></label>
-          <label>end (opsiyonel) <input id="end" placeholder="YYYY-MM-DDThh:mm:ss"></label>
-        </div>
-      </details>
-
+      <!-- 🔹 Veri Getir Butonu -->
       <div class="actions">
         <button id="fetchBtn">Verileri Getir</button>
         <span id="status"></span>
       </div>
+
       <div id="errorBox"></div>
     </section>
 
+    <!-- 🧮 Deprem Tablosu -->
     <section class="table-wrap">
       <table id="eqTable">
         <thead id="thead"></thead>
@@ -94,9 +54,11 @@
       </table>
     </section>
 
+    <!-- 📄 Footer -->
     <footer>
-      <small>Kaynak: AFAD Deprem Dairesi — `/apiv2/event/filter` (GET) • Döküman referansı mevcuttur.</small>
+      <small>Kaynak: AFAD Deprem Dairesi — Son 250 deprem listelenmektedir.</small>
     </footer>
+
   </main>
 
   <script>
