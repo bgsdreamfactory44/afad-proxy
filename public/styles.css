@@ -1,10 +1,10 @@
-/* ===== BG’s Dream Factory | Sismograf Revizyon 2 (Tarih Aralığı Eklendi) ===== */
+/* ===== BG’s Dream Factory | Sismograf Revizyon 3 (Kırmızı Tema, Modern Tablo, Spinner) ===== */
 :root {
-  --brand: #ff914d;
+  --brand: #c8102e; /* 🔴 Yeni kırmızı ana renk */
   --ink: #141414;
   --muted: #6b6b6b;
   --line: #eee;
-  --head: #fff6ee;
+  --head: #fff5f5;
   --bg: #ffffff;
 }
 
@@ -29,70 +29,54 @@ body {
 /* Kontrol paneli */
 .controls {
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 14px 16px;
+  border-radius: 16px;
+  padding: 18px 20px;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
+/* Üst filtreler ortalandı */
 .controls .row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 16px;
-  align-items: flex-end;
-}
-
-.controls label {
-  display: flex;
-  flex-direction: column;
-  font-size: 13px;
-  color: var(--muted);
-  font-weight: 400;
-}
-
-.controls input,
-.controls select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  min-width: 130px;
-  font-family: "Lato", sans-serif;
-}
-
-.controls .or {
-  align-self: center;
-  color: var(--muted);
-}
-
-/* 🔸 Şiddet (Magnitude) Filtre Butonları */
-.mag-filters {
-  display: flex;
+  justify-content: center;
+  gap: 14px 20px;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .filter-label {
   font-weight: 700;
   color: var(--ink);
-  font-size: 13px;
-  margin-right: 4px;
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+/* Şiddet Butonları */
+.mag-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
 }
 
 .mag-btn {
   background: #f9f9f9;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 13px;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
   cursor: pointer;
   font-weight: 600;
-  font-family: "Lato", sans-serif;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .mag-btn:hover {
-  background: #fff5ec;
+  background: #fff0f0;
   border-color: var(--brand);
   color: var(--brand);
 }
@@ -103,140 +87,146 @@ body {
   border-color: var(--brand);
 }
 
-/* 🔹 Yeni: Tarih Aralığı Seçimi */
+/* Tarih Aralığı */
 .date-filters {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
-  margin-left: 16px;
+  justify-content: center;
 }
 
 .date-filters input[type="date"] {
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: 1px solid #ccc;
-  border-radius: 8px;
+  border-radius: 10px;
   font-family: "Lato", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--ink);
-  cursor: pointer;
   background-color: #fafafa;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
 }
 
 .date-filters input[type="date"]:hover {
   border-color: var(--brand);
-  background-color: #fff5ec;
+  background-color: #fff5f5;
 }
 
 .date-filters .to {
   font-weight: 700;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 
-/* İşlem butonu ve durum */
+/* Buton ve Spinner */
 .actions {
+  margin-top: 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 10px;
+  justify-content: center;
+  gap: 12px;
 }
 
 #fetchBtn {
   background: var(--brand);
   color: #fff;
-  border: 0;
-  padding: 10px 18px;
-  border-radius: 8px;
+  border: none;
+  padding: 12px 22px;
+  border-radius: 12px;
   font-weight: 700;
   cursor: pointer;
+  font-size: 15px;
   transition: all 0.25s ease;
 }
 
 #fetchBtn:hover {
-  opacity: 0.9;
+  background: #a50d24;
   transform: translateY(-1px);
 }
 
-#status {
-  color: var(--muted);
-  font-size: 12px;
+/* 🔁 Spinner */
+.spinner {
+  border: 3px solid #eee;
+  border-top: 3px solid var(--brand);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  animation: spin 1s linear infinite;
 }
 
-#errorBox {
-  color: #c8102e;
-  font-weight: 700;
-  margin-top: 8px;
-  text-align: left;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* Tablo yapısı */
+/* Tablo */
 .table-wrap {
-  margin-top: 16px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  overflow: auto;
+  margin-top: 24px;
+  border-radius: 16px;
+  overflow: hidden;
   background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
 }
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-family: "Lato", sans-serif;
+  font-size: 14px;
 }
 
 thead th {
   position: sticky;
   top: 0;
   background: var(--head);
-  border-bottom: 1px solid var(--line);
-  padding: 10px;
+  border-bottom: 2px solid var(--brand);
+  padding: 12px 10px;
   text-align: left;
-  white-space: nowrap;
   font-weight: 700;
 }
 
 tbody td {
-  border-bottom: 1px solid var(--line);
-  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 10px;
   font-size: 13px;
-  font-weight: 400;
 }
 
 tr:hover td {
-  background: #fff9f3;
+  background: #fff6f6;
 }
 
-/* Sayfalama alanı */
+/* Footer */
 footer {
-  margin: 14px 0 30px;
+  margin: 18px 0 30px;
   text-align: center;
   color: var(--muted);
   font-size: 13px;
   font-family: "Lato", sans-serif;
 }
 
-footer button {
-  background: var(--brand);
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+/* 🔹 Mobil Uyumluluk */
+@media (max-width: 768px) {
+  .controls .row {
+    flex-direction: column;
+  }
 
-footer button:hover {
-  opacity: 0.9;
-}
+  .date-filters {
+    flex-direction: column;
+  }
 
-footer button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  color: #666;
+  #fetchBtn {
+    width: 100%;
+  }
+
+  .mag-filters {
+    justify-content: center;
+  }
+
+  table {
+    font-size: 12px;
+  }
+
+  thead th, tbody td {
+    padding: 8px;
+  }
 }
