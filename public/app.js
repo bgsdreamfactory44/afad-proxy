@@ -1,10 +1,12 @@
-// ===== Sismograf Frontend (Revizyon 5.3) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD UTC + cache bypass + 2500 limit
+// ===== Sismograf Frontend (Revizyon 5.4) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD uyumlu yerel zaman + geniş normalize
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD formatına tam uyum (UTC, Z harfi kaldırıldı)
+// 🧭 AFAD formatına tam uyum (yerel saat, Z harfi yok)
 function toAfadTime(d) {
-  return new Date(d.getTime()).toISOString().split(".")[0].replace("Z", "");
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  const localTime = new Date(d - tzOffset);
+  return localTime.toISOString().split(".")[0];
 }
 
 // Global değişkenler
@@ -35,7 +37,7 @@ function hideSpinner() {
 // ===================== PARAM HAZIRLAMA =====================
 function buildParams() {
   const p = new URLSearchParams();
-  const limit = 2500; // 🔸 GÜNCELLENDİ: AFAD'ın izin verdiği maksimum değer
+  const limit = 2500; // 🔸 AFAD'ın izin verdiği maksimum değer
 
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
@@ -121,12 +123,12 @@ function setRows(cols, list) {
 
 // ===================== AFAD VERİSİNİ NORMALİZE ET =====================
 function normalizeToList(json) {
-  const data = json?.data;
-  if (Array.isArray(data?.eventList)) return data.eventList;
-  if (Array.isArray(data?.features))
-    return data.features.map(f => ({ ...(f.properties || {}), geometry: f.geometry || null }));
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === "object") return [data];
+  const d = json?.data;
+  if (Array.isArray(d)) return d;
+  if (Array.isArray(d?.eventList)) return d.eventList;
+  if (Array.isArray(d?.features))
+    return d.features.map(f => ({ ...(f.properties || {}), geometry: f.geometry || null }));
+  if (d && typeof d === "object") return [d];
   return [];
 }
 
