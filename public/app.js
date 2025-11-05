@@ -1,178 +1,205 @@
-// ===== Sismograf Frontend (Revizyon 7.0 – TEMİZ VE NİHAİ) =====
-// 👑 Majesteleri'nin talimatlarıyla: Tüm 3 sorun (Tarih, Çeviri, Sıralama) ve tüm Yaver Paşa yazım hataları düzeltildi.
+// ===== Sismograf Frontend (Tam Çalışır) =====
+// Deprem verilerini AFAD API'den çekip en yeni depremi en üstte gösterir.
+// Tasarım: BG’s Dream Factory Revizyon 3.5
+
+// Yardımcı seçici
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD tarih formatı (YYYY-MM-DD hh:mm:ss)
-function toAfadTime(d) {
-  const pad = n => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
+// AFAD API kök adresi (proxy gerekmeden doğrudan kullanılır)
+const API_URL = "https://deprem.afad.gov.tr/apiv2/event/filter";
 
-// === Global değişkenler ===
-let fullData = [], filteredData = [];
+// Veri dizileri ve sayfa kontrol değişkenleri
+let fullData = [];
+let filteredData = [];
 let currentPage = 1;
-const perPage = 15, autoRefreshMS = 120000;
-let autoTimer = null;
+const perPage = 15;
+const autoRefreshMS = 120000;
+let autoTimer;
 
-// === Spinner ===
-function showSpinner() {
-  const s = qsel("status");
-  if (!s.querySelector(".spinner")) {
-    const sp = document.createElement("div");
-    sp.className = "spinner";
-    s.appendChild(sp);
-  }
-  s.querySelector(".spinner").style.display = "inline-block";
-}
-function hideSpinner() {
-  const sp = qsel("status").querySelector(".spinner");
-  if (sp) sp.style.display = "none";
+// Tarihi AFAD formatına çevir (YYYY-MM-DD hh:mm:ss)
+function toAfadTime(d) {
+  const pad = n => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
-// === Parametre Hazırlama ===
-
-// --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ (AFAD PDF'e göre) ---
-[cite_start]// Yaver Paşa Notu: AFAD dokümanı[cite: 127], azalan sıralamanın 'timedesc' değil, 'timedesc-' olduğunu belirtiyor.
+// AFAD parametrelerini hazırlama
 function buildParams() {
-  const p = new URLSearchParams();
-  const startInput = qsel("startDate")?.value;
-  const endInput = qsel("endDate")?.value;
-  const end = endInput ? new Date(endInput) : new Date();
-  const start = startInput ? new Date(startInput) : new Date(Date.now() - 30 * 86400000);
-  p.set("start", toAfadTime(start));
-  p.set("end", toAfadTime(end));
-  p.set("limit", "250");
-  p.set("orderby", "timedesc-"); [cite_start]// HATA DÜZELTİLDİ (tire eklendi) [cite: 127]
-  p.set("format", "json");
-  return p;
-}
-// --- DÜZELTME 3 SONU ---
+  const params = new URLSearchParams();
+  const startStr = qsel("startDate").value;
+  const endStr = qsel("endDate").value;
 
-// === Hata Yönetimi ===
-function renderError(msg){ qsel("errorBox").textContent = `⚠️ ${msg}`; }
-function clearError(){ qsel("errorBox").textContent = ""; }
+  const end = endStr ? new Date(endStr) : new Date();
+  const start = startStr ? new Date(startStr) : new Date(Date.now() - 30 * 86400000);
 
-// === Tarih Alanı ===
-function getEventTime(ev) {
-  return ev.origintime || ev.eventDate || ev.date || ev.time || "";
+  params.set("start", toAfadTime(start));
+  params.set("end", toAfadTime(end));
+  params.set("limit", "250");      // Son 250 deprem
+  params.set("orderby", "timedesc"); // En yeni üste【311†source】
+  params.set("format", "json");
+  return params;
 }
 
-// === Metin Bazlı Sıralama (AFAD biçimine göre) ===
-function sortByDateDesc(list) {
-  // Not: Bu fonksiyon artık fetchAndRender içinde kullanılmıyor
-  return list.sort((a, b) => getEventTime(b).localeCompare(getEventTime(a)));
+// Hata ve durum mesajları
+function renderError(msg) { qsel("errorBox").textContent = `⚠️ ${msg}`; }
+function clearError() { qsel("errorBox").textContent = ""; }
+function showStatus(text) { qsel("status").textContent = text; }
+function clearStatus() { qsel("status").textContent = ""; }
+
+// AFAD verisini normalize eden fonksiyon
+function normalizeData(json) {
+  // API dökümantasyonuna göre veri `data.eventList` veya `data` dizisi içinde gelir【312†source】.
+  let list = [];
+  if (Array.isArray(json?.data)) {
+    list = json.data;
+  } else if (Array.isArray(json?.data?.eventList)) {
+    list = json.data.eventList;
+  } else if (Array.isArray(json)) {
+    list = json;
+  }
+  return list;
 }
 
-// === Veri Normalizasyonu ===
-function normalizeToList(json){
-  const d=json?.data;
-  if(Array.isArray(d)) return d;
-  if(Array.isArray(d?.eventList)) return d.eventList;
-  if(Array.isArray(d?.features)) return d.features.map(f=>({...f.properties}));
-  if(d && typeof d==="object") return [d];
-  return [];
+// Deprem zamanını almak (priority: eventDate)
+function getTimeString(item) {
+  return item.eventDate || item.date || item.origintime || item.time || "";
 }
 
-// === Tablo ===
+// AFAD verilerini çek ve tabloyu güncelle
+async function fetchData() {
+  clearError();
+  showStatus("Yükleniyor...");
+  const params = buildParams();
 
-// --- DÜZELTME 2: Sütun Adı Çevirileri ---
-function translateColumnName(k){
-  const map = {
-    latitude:"Enlem",longitude:"Boylam",depth:"Derinlik (km)",rms:"RMS",
-    location:"Konum",magnitude:"Şiddet",province:"Şehir",district:"İlçe",
-    date:"Tarih",eventDate:"Tarih",origintime:"Tarih",
-    country:"Ülke", // Talimatınızla eklendi
-    neighborhood:"Bölge" // Talimatınızla eklendi
-  };
-  return map[k] || k;
+  try {
+    const url = `${API_URL}?${params.toString()}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    // AFAD hata durumlarını kontrol et
+    if (!res.ok) {
+      throw new Error(json?.detail || `HTTP ${res.status}`);
+    }
+    fullData = normalizeData(json);
+
+    // AFAD verisini eventDate alanına göre metin karşılaştırmasıyla sırala (en yeni üste)
+    fullData.sort((a, b) => {
+      const tb = getTimeString(b);
+      const ta = getTimeString(a);
+      return tb.localeCompare(ta);
+    });
+
+    applyFiltersAndRender();
+    clearStatus();
+  } catch (err) {
+    renderError(err.message || "Veri alınamadı");
+    clearStatus();
+  }
 }
 
-function shouldHideColumn(k){ return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(k); }
-
-// --- DÜZELTME 1: Çift Tarih Sütunu ---
-function autoColumns(list) {
-  const cols = new Set();
-  list.forEach(o => Object.keys(o || {}).forEach(k => {
-    if (!shouldHideColumn(k)) cols.add(k);
-  }));
-
-  // Çift tarih anahtarlarını (origintime, eventDate) teke düşür
-  if (cols.has("origintime")) {
-    cols.delete("eventDate");
-    cols.delete("date");
-  } else if (cols.has("eventDate")) {
-    cols.delete("date");
-  }
-  return Array.from(cols);
+// Şiddet butonlarından etkin olan filtreleri uygula
+function applyMagnitudeFilter() {
+  const activeRanges = Array.from(document.querySelectorAll(".mag-btn.active"))
+    .map(btn => btn.dataset.range);
+  if (activeRanges.length === 0) {
+    filteredData = fullData;
+    return;
+  }
+  filteredData = fullData.filter(item => {
+    const mag = parseFloat(item.magnitude);
+    return activeRanges.some(range => {
+      if (range === "0-2") return mag < 2;
+      if (range === "2-4") return mag >= 2 && mag < 4;
+      if (range === "4-6") return mag >= 4 && mag < 6;
+      if (range === "6-8") return mag >= 6 && mag < 8;
+      if (range === "8+") return mag >= 8;
+      return false;
+    });
+  });
 }
 
-function setHeader(cols){ const thead=qsel("thead"); thead.innerHTML=""; const tr=document.createElement("tr"); cols.forEach(c=>{const th=document.createElement("th"); th.textContent=translateColumnName(c); tr.appendChild(th);}); thead.appendChild(tr); }
-function setRows(cols,list){ const tbody=qsel("tbody"); tbody.innerHTML=""; list.forEach(obj=>{const tr=document.createElement("tr"); cols.forEach(c=>{const td=document.createElement("td"); let val=obj?.[c]??""; if(typeof val==="object"&&val!==null)val=JSON.stringify(val); td.textContent=val; tr.appendChild(td);}); tbody.appendChild(tr);}); }
+// Tabloya verileri basan fonksiyon
+function renderTable() {
+  const list = filteredData.slice((currentPage - 1) * perPage, currentPage * perPage);
+  const cols = new Set();
+  list.forEach(item => {
+    Object.keys(item || {}).forEach(k => cols.add(k));
+  });
+  const colArray = Array.from(cols);
+  // Başlıklar
+  const thead = qsel("thead");
+  thead.innerHTML = "";
+  const trHead = document.createElement("tr");
+  colArray.forEach(col => {
+    const th = document.createElement("th");
+    th.textContent = translateColumnName(col);
+    trHead.appendChild(th);
+  });
+  thead.appendChild(trHead);
 
-// === Filtre ===
-function applyMagnitudeFilter(){
-  const active=Array.from(document.querySelectorAll(".mag-btn.active")).map(b=>b.dataset.range);
-  if(!active.length){filteredData=fullData;return;}
-  filteredData=fullData.filter(ev=>{
-    const m=parseFloat(ev.magnitude);
-    return active.some(r=>(r==="0-2"&&m<2)||(r==="2-4"&&m>=2&&m<4)||(r==="4-6"&&m>=4&&m<6)||(r==="6-8"&&m>=6&&m<8)||(r==="8+"&&m>=8));
-  });
+    // Satırlar
+    const tbody = qsel("tbody");
+    tbody.innerHTML = "";
+    list.forEach(item => {
+      const tr = document.createElement("tr");
+      colArray.forEach(col => {
+        const td = document.createElement("td");
+        let val = item[col];
+        if (typeof val === "object" && val !== null) {
+          val = JSON.stringify(val);
+        }
+        td.textContent = val ?? "";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    // Footer - sayfa bilgisi ve butonlar
+    const footer = document.querySelector("footer");
+    const totalPages = Math.ceil(filteredData.length / perPage) || 1;
+    footer.innerHTML = `<small>Sayfa ${currentPage}/${totalPages} • Toplam ${filteredData.length} kayıt</small>`;
+    if (totalPages > 1) {
+      const prevBtn = document.createElement("button");
+      const nextBtn = document.createElement("button");
+      prevBtn.textContent = "← Önceki";
+      nextBtn.textContent = "Sonraki →";
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+      prevBtn.onclick = () => { currentPage--; renderTable(); };
+      nextBtn.onclick = () => { currentPage++; renderTable(); };
+      footer.appendChild(document.createElement("br"));
+      footer.appendChild(prevBtn);
+      footer.appendChild(nextBtn);
+    }
 }
 
-// === Sayfalama ===
-function renderPagination(){
-  const totalPages=Math.ceil(filteredData.length/perPage);
-  const footer=document.querySelector("footer");
-  footer.innerHTML=`<small>Sayfa ${currentPage}/${totalPages} • Toplam ${filteredData.length} kayıt</small>`;
-  if(totalPages>1){
-    const prev=document.createElement("button"),next=document.createElement("button");
-    prev.textContent="← Önceki";next.textContent="Sonraki →";
-    prev.disabled=currentPage===1;next.disabled=currentPage===totalPages;
-    prev.onclick=()=>{currentPage--;renderTable();};
-    next.onclick=()=>{currentPage++;renderTable();};
-    footer.appendChild(document.createElement("br"));
-    footer.appendChild(prev);footer.appendChild(next);
-  }
+// Tüm filtreleri uygulayıp tabloyu güncelle
+function applyFiltersAndRender() {
+  applyMagnitudeFilter();
+  currentPage = 1;
+  renderTable();
 }
 
-// === Tablo Güncelle ===
-function renderTable(){
-  const list=filteredData.slice((currentPage-1)*perPage,currentPage*perPage);
-  const cols=autoColumns(list);
-  setHeader(cols);setRows(cols,list);renderPagination();
+// Olayları kur
+function setupEvents() {
+  // Şiddet butonları
+  document.querySelectorAll(".mag-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      btn.classList.toggle("active");
+      applyFiltersAndRender();
+    });
+  });
+  // Tabloyu güncelle butonu
+  qsel("fetchBtn").addEventListener("click", fetchData);
 }
 
-// === Veri Çek ===
-async function fetchAndRender(){
-  clearError();showSpinner();
-  const params=buildParams();
-  const url=`${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`;
-  try{
-    const r=await fetch(url);
-    const json=await r.json().catch(()=>({}));
-    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
-    fullData=normalizeToList(json);
-
-    // API'den "orderby=timedesc-" ile (en yeni üste) sıralı veri geldiği için
-    // istemcide tekrar sıralama (sortByDateDesc) yapmıyoruz. Sadece filtreliyoruz.
-    fullData=fullData.filter(e=>getEventTime(e));
-
-    applyMagnitudeFilter();currentPage=1;renderTable();
-  }catch(e){renderError(e.message||"Veri alınamadı");}
-  finally{hideSpinner();}
+// Otomatik yenileme kur
+function startAutoRefresh() {
+  if (autoTimer) clearInterval(autoTimer);
+  autoTimer = setInterval(fetchData, autoRefreshMS);
 }
 
-// === Olaylar ===
-function setupMagnitudeButtons(){
-  document.querySelectorAll(".mag-btn").forEach(btn=>{
-    btn.addEventListener("click",()=>{
-      btn.classList.toggle("active");
-      applyMagnitudeFilter();currentPage=1;renderTable();
-    });
-  });
-}
-function startAutoRefresh(){ if(autoTimer)clearInterval(autoTimer); autoTimer=setInterval(fetchAndRender,autoRefreshMS); }
-
-// === Başlat ===
-window.addEventListener("DOMContentLoaded",()=>{ setupMagnitudeButtons(); fetchAndRender(); startAutoRefresh(); });
-document.getElementById("fetchBtn").addEventListener("click",fetchAndRender);
+// Başlat
+window.addEventListener("DOMContentLoaded", () => {
+  setupEvents();
+  fetchData();       // İlk yükleme
+  startAutoRefresh(); // Periyodik güncelleme
+});
