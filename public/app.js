@@ -1,13 +1,34 @@
-// ===== Sismograf Frontend (Revizyon 5.5) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD boşluklu tarih formatı + yerel zaman uyumu
+// ===== Sismograf Frontend (Revizyon 5.5-b) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD boşluklu tarih + sağlam sıralama
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD formatına tam uyum (boşluklu tarih biçimi, Z harfi yok)
 function toAfadTime(d) {
   const tzOffset = d.getTimezoneOffset() * 60000;  // UTC farkını kaldır
   const localTime = new Date(d - tzOffset);        // Yerel saate dönüştür
-  // ISO biçimindeki 'T' karakterini boşlukla değiştir
   return localTime.toISOString().split(".")[0].replace("T", " ");
+}
+
+// 🔧 YENİ: Tüm olası alanlardan güvenli zaman damgası üret
+function getEventTime(ev) {
+  const raw =
+    ev?.date ??
+    ev?.eventDate ??
+    ev?.origintime ??
+    ev?.time ??
+    ev?.datetime ??
+    ev?.originTime ??
+    "";
+
+  if (!raw || typeof raw !== "string") return 0;
+
+  // AFAD bazen "YYYY-MM-DD hh:mm:ss" gönderir → ISO için ' ' → 'T'
+  const isoLike = raw.includes(" ")
+    ? raw.replace(" ", "T")
+    : raw;
+
+  const t = Date.parse(isoLike);
+  return Number.isNaN(t) ? 0 : t;
 }
 
 // Global değişkenler
@@ -181,7 +202,7 @@ function applyMagnitudeFilter() {
       if (r === "0-2") return mag >= 0 && mag < 2;
       if (r === "2-4") return mag >= 2 && mag < 4;
       if (r === "4-6") return mag >= 4 && mag < 6;
-      if (r === "6-8") return mag >= 6 && mag < 8;
+      if (r === "6-8") return mag >= 6 ve mag < 8;
       if (r === "8+")  return mag >= 8;
       return false;
     });
@@ -194,7 +215,7 @@ async function fetchAndRender() {
   showSpinner();
 
   const params = buildParams();
-  const url = `${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`; // 🔸 GÜNCELLENDİ: cache bypass
+  const url = `${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`;
 
   try {
     const r = await fetch(url);
@@ -207,12 +228,10 @@ async function fetchAndRender() {
     }
 
     fullData = normalizeToList(json);
-    // Güvence: en yeni en üstte
-    fullData.sort((a, b) => {
-      const da = new Date(a.date || a.eventDate || a.origintime || 0);
-      const db = new Date(b.date || b.eventDate || b.origintime || 0);
-      return db - da;
-    });
+
+    // 🔧 YENİ: Tüm kayıtlar için zaman damgası çıkar, en yeni üste sırala
+    fullData.forEach(e => { e.__ts = getEventTime(e); });
+    fullData.sort((a, b) => b.__ts - a.__ts);
 
     applyMagnitudeFilter();
     currentPage = 1;
