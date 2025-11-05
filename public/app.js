@@ -70,22 +70,21 @@ function normalizeToList(json){
 
 // === Tablo ===
 
-// --- BURASI DÜZENLENDİ, PADİŞAHIM (Çeviri Eklendi) ---
+// --- DÜZENLEME 2: Sütun Adı Çevirileri ---
 function translateColumnName(k){
   const map = {
     latitude:"Enlem",longitude:"Boylam",depth:"Derinlik (km)",rms:"RMS",
     location:"Konum",magnitude:"Şiddet",province:"Şehir",district:"İlçe",
     date:"Tarih",eventDate:"Tarih",origintime:"Tarih",
-    country:"Ülke", // Yeni eklendi
-    neighborhood:"Bölge" // Yeni eklendi
+    country:"Ülke", // Talimatınızla eklendi
+    neighborhood:"Bölge" // Talimatınızla eklendi
   };
   return map[k] || k;
 }
-// --- DÜZENLEME BİTTİ ---
 
 function shouldHideColumn(k){ return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(k); }
 
-// --- ÇİFT TARİH SÜTUNU DÜZELTMESİ ---
+// --- DÜZENLEME 1: Çift Tarih Sütunu Düzeltmesi ---
 function autoColumns(list) {
   const cols = new Set();
   list.forEach(o => Object.keys(o || {}).forEach(k => {
@@ -105,7 +104,6 @@ function autoColumns(list) {
 
   return Array.from(cols);
 }
-// --- DÜZENLEME BİTTİ ---
 
 function setHeader(cols){ const thead=qsel("thead"); thead.innerHTML=""; const tr=document.createElement("tr"); cols.forEach(c=>{const th=document.createElement("th"); th.textContent=translateColumnName(c); tr.appendChild(th);}); thead.appendChild(tr); }
 function setRows(cols,list){ const tbody=qsel("tbody"); tbody.innerHTML=""; list.forEach(obj=>{const tr=document.createElement("tr"); cols.forEach(c=>{const td=document.createElement("td"); let val=obj?.[c]??""; if(typeof val==="object"&&val!==null)val=JSON.stringify(val); td.textContent=val; tr.appendChild(td);}); tbody.appendChild(tr);}); }
@@ -133,7 +131,7 @@ function renderPagination(){
     next.onclick=()=>{currentPage++;renderTable();};
     footer.appendChild(document.createElement("br"));
     footer.appendChild(prev);footer.appendChild(next);
-s  }
+  }
 }
 
 // === Tablo Güncelle ===
@@ -151,7 +149,7 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-s    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
     fullData=sortByDateDesc(fullData.filter(e=>getEventTime(e)));
     applyMagnitudeFilter();currentPage=1;renderTable();
@@ -172,4 +170,4 @@ function startAutoRefresh(){ if(autoTimer)clearInterval(autoTimer); autoTimer=se
 
 // === Başlat ===
 window.addEventListener("DOMContentLoaded",()=>{ setupMagnitudeButtons(); fetchAndRender(); startAutoRefresh(); });
-document.getElementById("fetchBtn").addEventListener("click",fetchAndRender); // Hatalı 'fetchAndDeRender' düzeltildi.
+document.getElementById("fetchBtn").addEventListener("click",fetchAndRender);
