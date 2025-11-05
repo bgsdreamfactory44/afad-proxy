@@ -1,12 +1,13 @@
-// ===== Sismograf Frontend (Revizyon 5.4) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD uyumlu yerel zaman + geniş normalize
+// ===== Sismograf Frontend (Revizyon 5.5) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD boşluklu tarih formatı + yerel zaman uyumu
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD formatına tam uyum (yerel saat, Z harfi yok)
+// 🧭 AFAD formatına tam uyum (boşluklu tarih biçimi, Z harfi yok)
 function toAfadTime(d) {
-  const tzOffset = d.getTimezoneOffset() * 60000;
-  const localTime = new Date(d - tzOffset);
-  return localTime.toISOString().split(".")[0];
+  const tzOffset = d.getTimezoneOffset() * 60000;  // UTC farkını kaldır
+  const localTime = new Date(d - tzOffset);        // Yerel saate dönüştür
+  // ISO biçimindeki 'T' karakterini boşlukla değiştir
+  return localTime.toISOString().split(".")[0].replace("T", " ");
 }
 
 // Global değişkenler
@@ -207,7 +208,11 @@ async function fetchAndRender() {
 
     fullData = normalizeToList(json);
     // Güvence: en yeni en üstte
-    fullData.sort((a, b) => new Date(b.date || b.eventDate) - new Date(a.date || a.eventDate));
+    fullData.sort((a, b) => {
+      const da = new Date(a.date || a.eventDate || a.origintime || 0);
+      const db = new Date(b.date || b.eventDate || b.origintime || 0);
+      return db - da;
+    });
 
     applyMagnitudeFilter();
     currentPage = 1;
