@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 6.3 – Nihai ve Temiz) =====
-// 👑 Majesteleri'nin talimatlarıyla: Tüm 3 sorun (Tarih, Çeviri, Sıralama) ve tüm yazım hataları düzeltildi.
+// ===== Sismograf Frontend (Revizyon 6.4 – Nihai Çözüm) =====
+// 👑 Majesteleri'nin talimatlarıyla: "Büyük Hata" (timedesc-) AFAD dokümanına  göre düzeltildi.
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD tarih formatı (YYYY-MM-DD hh:mm:ss)
@@ -30,6 +30,9 @@ function hideSpinner() {
 }
 
 // === Parametre Hazırlama ===
+
+// --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ ---
+// Yaver Paşa Notu: AFAD dokümanı, azalan sıralamanın 'timedesc' değil, 'timedesc-' olduğunu belirtiyor.
 function buildParams() {
   const p = new URLSearchParams();
   const startInput = qsel("startDate")?.value;
@@ -39,10 +42,11 @@ function buildParams() {
   p.set("start", toAfadTime(start));
   p.set("end", toAfadTime(end));
   p.set("limit", "250");
-  p.set("orderby", "timedesc"); // API'den zaten en yeni üste sıralı isteniyor
+  p.set("orderby", "timedesc-"); // HATA DÜZELTİLDİ (tire eklendi)
   p.set("format", "json");
   return p;
 }
+// --- DÜZELTME 3 SONU ---
 
 // === Hata Yönetimi ===
 function renderError(msg){ qsel("errorBox").textContent = `⚠️ ${msg}`; }
@@ -75,7 +79,7 @@ function normalizeToList(json){
 function translateColumnName(k){
   const map = {
     latitude:"Enlem",longitude:"Boylam",depth:"Derinlik (km)",rms:"RMS",
-    location:"Konum",magnitude:"Şiddet",province:"Şehir",district:"İlçe",
+  S   location:"Konum",magnitude:"Şiddet",province:"Şehir",district:"İlçe",
     date:"Tarih",eventDate:"Tarih",origintime:"Tarih",
     country:"Ülke", // Talimatınızla eklendi
     neighborhood:"Bölge" // Talimatınızla eklendi
@@ -98,7 +102,7 @@ function autoColumns(list) {
     cols.delete("date");
   } else if (cols.has("eventDate")) {
     cols.delete("date");
-  }
+S  }
   return Array.from(cols);
 }
 
@@ -146,15 +150,12 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-    // --- YAZIM HATASI DÜZELTMESİ (ÖNCEKİ KODDAKİ 's' HARFİ KALDIRILDI) ---
-    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+  G  if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
 
-    // --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ ---
-    // API'den "orderby=timedesc" ile (en yeni üste) sıralı veri geldiği için
+    // API'den "orderby=timedesc-" ile (en yeni üste) sıralı veri geldiği için
     // istemcide tekrar sıralama (sortByDateDesc) yapmıyoruz. Sadece filtreliyoruz.
     fullData=fullData.filter(e=>getEventTime(e));
-    // --- DÜZELTME 3 SONU ---
 
     applyMagnitudeFilter();currentPage=1;renderTable();
   }catch(e){renderError(e.message||"Veri alınamadı");}
@@ -167,7 +168,7 @@ function setupMagnitudeButtons(){
     btn.addEventListener("click",()=>{
       btn.classList.toggle("active");
       applyMagnitudeFilter();currentPage=1;renderTable();
-This     });
+    });
   });
 }
 function startAutoRefresh(){ if(autoTimer)clearInterval(autoTimer); autoTimer=setInterval(fetchAndRender,autoRefreshMS); }
