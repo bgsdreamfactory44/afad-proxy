@@ -1,73 +1,57 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Sismograf | Canlı Deprem Verileri</title>
-
   <!-- Lato fontu -->
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body style="font-family: 'Lato', sans-serif;">
+<body>
 
-  <main class="wrap">
-    <!-- 🔲 Tüm bölümleri kapsayan ana kutu -->
-    <div class="main-box">
-
-      <!-- 🔹 Filtre ve Güncelleme Alanı -->
-      <section class="controls">
-        <div class="row">
-
-          <!-- 🔸 Şiddet Aralığı Butonları -->
-          <div class="mag-filters">
-            <span class="filter-label">Şiddet Aralığı:</span>
-            <button class="mag-btn" data-range="0-2">0–2</button>
-            <button class="mag-btn" data-range="2-4">2–4</button>
-            <button class="mag-btn" data-range="4-6">4–6</button>
-            <button class="mag-btn" data-range="6-8">6–8</button>
-            <button class="mag-btn" data-range="8+">8+</button>
-          </div>
-
-          <!-- 🔸 Tarih Aralığı Seçimi -->
-          <div class="date-filters">
-            <span class="filter-label">Tarih Aralığı:</span>
-            <input id="startDate" type="date" />
-            <span class="to">–</span>
-            <input id="endDate" type="date" />
-          </div>
-
-          <!-- 🔹 Güncelleme Butonu -->
-          <div class="update-btn-wrap">
-            <button id="fetchBtn">Tabloyu Güncelle</button>
-            <span id="status"></span>
-          </div>
-
+<main class="wrap">
+  <div class="main-box">
+    <section class="controls">
+      <div class="row">
+        <div class="mag-filters">
+          <span class="filter-label">Şiddet Aralığı:</span>
+          <button class="mag-btn" data-range="0-2">0–2</button>
+          <button class="mag-btn" data-range="2-4">2–4</button>
+          <button class="mag-btn" data-range="4-6">4–6</button>
+          <button class="mag-btn" data-range="6-8">6–8</button>
+          <button class="mag-btn" data-range="8+">8+</button>
         </div>
 
-        <div id="errorBox"></div>
-      </section>
+        <div class="date-filters">
+          <span class="filter-label">Tarih Aralığı:</span>
+          <input id="startDate" type="date">
+          <span class="to">–</span>
+          <input id="endDate" type="date">
+        </div>
 
-      <!-- 🧮 Deprem Tablosu -->
-      <section class="table-wrap">
-        <table id="eqTable">
-          <thead id="thead"></thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </section>
+        <div class="update-btn-wrap">
+          <button id="fetchBtn">Tabloyu Güncelle</button>
+          <span id="status"></span>
+        </div>
+      </div>
+      <div id="errorBox"></div>
+    </section>
 
-      <!-- 📄 Footer -->
-      <footer>
-        <small>Kaynak: AFAD Deprem Dairesi — Son 250 deprem listelenmektedir.</small>
-      </footer>
+    <!-- Deprem tablosu -->
+    <section class="table-wrap">
+      <table id="eqTable">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </section>
 
-    </div> <!-- /.main-box -->
-  </main>
+    <footer>
+      <small>Kaynak: AFAD Deprem Dairesi — Son 250 deprem listelenmektedir.</small>
+    </footer>
+  </div>
+</main>
 
-  <!-- 🔧 API bağlantısı güncellendi -->
-  <script>
-    const API_BASE = "https://afad-proxy.vercel.app/api/events";
-  </script>
-  <script src="./app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
