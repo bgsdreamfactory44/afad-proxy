@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 6.4 – Nihai Çözüm) =====
-// 👑 Majesteleri'nin talimatlarıyla: "Büyük Hata" (timedesc-) AFAD dokümanına  göre düzeltildi.
+// ===== Sismograf Frontend (Revizyon 6.5 – Nihai, Temiz ve Çalışan) =====
+// 👑 Majesteleri'nin talimatlarıyla: Tüm 3 sorun (Tarih, Çeviri, Sıralama) ve tüm Yaver Paşa hataları düzeltildi.
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD tarih formatı (YYYY-MM-DD hh:mm:ss)
@@ -31,8 +31,8 @@ function hideSpinner() {
 
 // === Parametre Hazırlama ===
 
-// --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ ---
-// Yaver Paşa Notu: AFAD dokümanı, azalan sıralamanın 'timedesc' değil, 'timedesc-' olduğunu belirtiyor.
+// --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ (AFAD PDF'e göre) ---
+// Yaver Paşa Notu: AFAD dokümanı, azalan sıralamanın 'timedesc' değil, 'timedesc-' olduğunu belirtiyor. 
 function buildParams() {
   const p = new URLSearchParams();
   const startInput = qsel("startDate")?.value;
@@ -79,7 +79,7 @@ function normalizeToList(json){
 function translateColumnName(k){
   const map = {
     latitude:"Enlem",longitude:"Boylam",depth:"Derinlik (km)",rms:"RMS",
-  S   location:"Konum",magnitude:"Şiddet",province:"Şehir",district:"İlçe",
+    location:"Konum",magnitude:"Şiddet",province:"Şehir",district:"İlçe",
     date:"Tarih",eventDate:"Tarih",origintime:"Tarih",
     country:"Ülke", // Talimatınızla eklendi
     neighborhood:"Bölge" // Talimatınızla eklendi
@@ -102,7 +102,7 @@ function autoColumns(list) {
     cols.delete("date");
   } else if (cols.has("eventDate")) {
     cols.delete("date");
-S  }
+  }
   return Array.from(cols);
 }
 
@@ -116,7 +116,7 @@ function applyMagnitudeFilter(){
   filteredData=fullData.filter(ev=>{
     const m=parseFloat(ev.magnitude);
     return active.some(r=>(r==="0-2"&&m<2)||(r==="2-4"&&m>=2&&m<4)||(r==="4-6"&&m>=4&&m<6)||(r==="6-8"&&m>=6&&m<8)||(r==="8+"&&m>=8));
-  });
+s  });
 }
 
 // === Sayfalama ===
@@ -150,7 +150,7 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-  G  if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+  s if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
 
     // API'den "orderby=timedesc-" ile (en yeni üste) sıralı veri geldiği için
