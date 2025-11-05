@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 5.5-b) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD boşluklu tarih + sağlam sıralama
+// ===== Sismograf Frontend (Revizyon 5.6) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD boşluklu tarih + güvenli sıralama
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD formatına tam uyum (boşluklu tarih biçimi, Z harfi yok)
@@ -9,7 +9,7 @@ function toAfadTime(d) {
   return localTime.toISOString().split(".")[0].replace("T", " ");
 }
 
-// 🔧 YENİ: Tüm olası alanlardan güvenli zaman damgası üret
+// 🔧 Güvenli zaman çözümleyici — bütün olası alanları yakalar
 function getEventTime(ev) {
   const raw =
     ev?.date ??
@@ -20,18 +20,18 @@ function getEventTime(ev) {
     ev?.originTime ??
     "";
 
-  if (!raw || typeof raw !== "string") return 0;
+  if (typeof raw === "number") return raw;                 // timestamp
+  if (!raw || typeof raw !== "string") return 0;           // boş değer
 
-  // AFAD bazen "YYYY-MM-DD hh:mm:ss" gönderir → ISO için ' ' → 'T'
-  const isoLike = raw.includes(" ")
-    ? raw.replace(" ", "T")
-    : raw;
+  let isoLike = raw.trim();
+  if (isoLike.includes(" ")) isoLike = isoLike.replace(" ", "T");
+  if (!isoLike.includes("T")) isoLike += "T00:00:00";
 
   const t = Date.parse(isoLike);
   return Number.isNaN(t) ? 0 : t;
 }
 
-// Global değişkenler
+// ===================== GLOBAL =====================
 let fullData = [];
 let filteredData = [];
 let currentPage = 1;
@@ -49,7 +49,6 @@ function showSpinner() {
   }
   status.querySelector(".spinner").style.display = "inline-block";
 }
-
 function hideSpinner() {
   const status = qsel("status");
   const spinner = status.querySelector(".spinner");
@@ -59,7 +58,7 @@ function hideSpinner() {
 // ===================== PARAM HAZIRLAMA =====================
 function buildParams() {
   const p = new URLSearchParams();
-  const limit = 2500; // 🔸 AFAD'ın izin verdiği maksimum değer
+  const limit = 2500;
 
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
@@ -78,12 +77,8 @@ function buildParams() {
 }
 
 // ===================== HATA YÖNETİMİ =====================
-function renderError(msg) {
-  qsel("errorBox").textContent = `⚠️ ${msg}`;
-}
-function clearError() {
-  qsel("errorBox").textContent = "";
-}
+function renderError(msg) { qsel("errorBox").textContent = `⚠️ ${msg}`; }
+function clearError() { qsel("errorBox").textContent = ""; }
 
 // ===================== TABLO =====================
 function translateColumnName(key) {
@@ -102,11 +97,9 @@ function translateColumnName(key) {
   };
   return map[key] || key;
 }
-
 function shouldHideColumn(key) {
   return ["eventid", "eventID", "type", "isEventUpdate", "lastUpdateDate"].includes(key);
 }
-
 function autoColumns(list) {
   const cols = new Set();
   list.forEach(obj => Object.keys(obj || {}).forEach(k => {
@@ -114,7 +107,6 @@ function autoColumns(list) {
   }));
   return Array.from(cols);
 }
-
 function setHeader(cols) {
   const thead = qsel("thead");
   thead.innerHTML = "";
@@ -126,7 +118,6 @@ function setHeader(cols) {
   });
   thead.appendChild(tr);
 }
-
 function setRows(cols, list) {
   const tbody = qsel("tbody");
   tbody.innerHTML = "";
@@ -167,10 +158,8 @@ function renderPagination() {
     nextBtn.textContent = "Sonraki →";
     prevBtn.disabled = currentPage === 1;
     nextBtn.disabled = currentPage === totalPages;
-
     prevBtn.onclick = () => { currentPage--; renderTable(); };
     nextBtn.onclick = () => { currentPage++; renderTable(); };
-
     footer.appendChild(document.createElement("br"));
     footer.appendChild(prevBtn);
     footer.appendChild(nextBtn);
@@ -202,7 +191,7 @@ function applyMagnitudeFilter() {
       if (r === "0-2") return mag >= 0 && mag < 2;
       if (r === "2-4") return mag >= 2 && mag < 4;
       if (r === "4-6") return mag >= 4 && mag < 6;
-      if (r === "6-8") return mag >= 6 ve mag < 8;
+      if (r === "6-8") return mag >= 6 && mag < 8;
       if (r === "8+")  return mag >= 8;
       return false;
     });
@@ -229,7 +218,7 @@ async function fetchAndRender() {
 
     fullData = normalizeToList(json);
 
-    // 🔧 YENİ: Tüm kayıtlar için zaman damgası çıkar, en yeni üste sırala
+    // 🔹 Yeni: güvenli zaman damgasına göre sırala (en yeni → en eski)
     fullData.forEach(e => { e.__ts = getEventTime(e); });
     fullData.sort((a, b) => b.__ts - a.__ts);
 
@@ -255,7 +244,6 @@ function setupMagnitudeButtons() {
     });
   });
 }
-
 function startAutoRefresh() {
   if (autoTimer) clearInterval(autoTimer);
   autoTimer = setInterval(fetchAndRender, autoRefreshMS);
@@ -267,5 +255,4 @@ window.addEventListener("DOMContentLoaded", () => {
   fetchAndRender();
   startAutoRefresh();
 });
-
 document.getElementById("fetchBtn").addEventListener("click", fetchAndRender);
