@@ -12,7 +12,13 @@ const SAFE_LIMIT = 1000; // Proxy koruma sınırı
 const cache = new NodeCache({ stdTTL: CACHE_SECONDS });
 
 // AFAD zaman biçimi: YYYY-MM-DDThh:mm:ss (Z olmadan)
-const toAfadTime = (d) => new Date(d).toISOString().split(".")[0];
+const toAfadTime = (d) => {
+  // Yerel saat farkını uygula ve "Z" harfini kaldır
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  const localTime = new Date(d - tzOffset);
+  return localTime.toISOString().split(".")[0];
+};
+
 const pFloat = (v) => (v !== undefined ? parseFloat(v) : undefined);
 const pInt = (v) => (v !== undefined ? parseInt(v, 10) : undefined);
 
