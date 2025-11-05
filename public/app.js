@@ -1,37 +1,15 @@
-// ===== Sismograf Frontend (Revizyon 5.6) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD boşluklu tarih + güvenli sıralama
+// ===== Sismograf Frontend (Revizyon 5.7) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD tam tarih uyumu + doğru sıralama
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD formatına tam uyum (boşluklu tarih biçimi, Z harfi yok)
+// 🧭 AFAD tarih formatı: YYYY-MM-DD hh:mm:ss (Z yok, yerel saat)
 function toAfadTime(d) {
-  const tzOffset = d.getTimezoneOffset() * 60000;  // UTC farkını kaldır
-  const localTime = new Date(d - tzOffset);        // Yerel saate dönüştür
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  const localTime = new Date(d - tzOffset);
   return localTime.toISOString().split(".")[0].replace("T", " ");
 }
 
-// 🔧 Güvenli zaman çözümleyici — bütün olası alanları yakalar
-function getEventTime(ev) {
-  const raw =
-    ev?.date ??
-    ev?.eventDate ??
-    ev?.origintime ??
-    ev?.time ??
-    ev?.datetime ??
-    ev?.originTime ??
-    "";
-
-  if (typeof raw === "number") return raw;                 // timestamp
-  if (!raw || typeof raw !== "string") return 0;           // boş değer
-
-  let isoLike = raw.trim();
-  if (isoLike.includes(" ")) isoLike = isoLike.replace(" ", "T");
-  if (!isoLike.includes("T")) isoLike += "T00:00:00";
-
-  const t = Date.parse(isoLike);
-  return Number.isNaN(t) ? 0 : t;
-}
-
-// ===================== GLOBAL =====================
+// Global değişkenler
 let fullData = [];
 let filteredData = [];
 let currentPage = 1;
@@ -49,9 +27,9 @@ function showSpinner() {
   }
   status.querySelector(".spinner").style.display = "inline-block";
 }
+
 function hideSpinner() {
-  const status = qsel("status");
-  const spinner = status.querySelector(".spinner");
+  const spinner = qsel("status").querySelector(".spinner");
   if (spinner) spinner.style.display = "none";
 }
 
@@ -62,11 +40,8 @@ function buildParams() {
 
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
-
   const end = endInput ? new Date(endInput) : new Date();
-  const start = startInput
-    ? new Date(startInput)
-    : new Date(Date.now() - 30 * 86400000);
+  const start = startInput ? new Date(startInput) : new Date(Date.now() - 30 * 86400000);
 
   p.set("start", toAfadTime(start));
   p.set("end", toAfadTime(end));
@@ -83,23 +58,18 @@ function clearError() { qsel("errorBox").textContent = ""; }
 // ===================== TABLO =====================
 function translateColumnName(key) {
   const map = {
-    latitude: "Enlem",
-    longitude: "Boylam",
-    depth: "Derinlik (km)",
-    rms: "RMS (Ölçüm Doğruluğu)",
-    location: "Konum",
-    magnitude: "Şiddet",
-    country: "Ülke",
-    province: "Şehir",
-    district: "İlçe",
-    neighborhood: "Bölge",
-    date: "Tarih"
+    latitude: "Enlem", longitude: "Boylam", depth: "Derinlik (km)",
+    rms: "RMS (Ölçüm Doğruluğu)", location: "Konum", magnitude: "Şiddet",
+    country: "Ülke", province: "Şehir", district: "İlçe",
+    neighborhood: "Bölge", date: "Tarih", eventDate: "Tarih"
   };
   return map[key] || key;
 }
+
 function shouldHideColumn(key) {
-  return ["eventid", "eventID", "type", "isEventUpdate", "lastUpdateDate"].includes(key);
+  return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(key);
 }
+
 function autoColumns(list) {
   const cols = new Set();
   list.forEach(obj => Object.keys(obj || {}).forEach(k => {
@@ -107,6 +77,7 @@ function autoColumns(list) {
   }));
   return Array.from(cols);
 }
+
 function setHeader(cols) {
   const thead = qsel("thead");
   thead.innerHTML = "";
@@ -118,6 +89,7 @@ function setHeader(cols) {
   });
   thead.appendChild(tr);
 }
+
 function setRows(cols, list) {
   const tbody = qsel("tbody");
   tbody.innerHTML = "";
@@ -145,6 +117,11 @@ function normalizeToList(json) {
   return [];
 }
 
+// ===================== DOĞRU TARİH ALANINI BUL =====================
+function getEventTime(ev) {
+  return ev.origintime || ev.eventDate || ev.date || ev.time || ev.EventDate || null;
+}
+
 // ===================== SAYFALAMA =====================
 function renderPagination() {
   const totalPages = Math.ceil(filteredData.length / perPage);
@@ -158,8 +135,10 @@ function renderPagination() {
     nextBtn.textContent = "Sonraki →";
     prevBtn.disabled = currentPage === 1;
     nextBtn.disabled = currentPage === totalPages;
+
     prevBtn.onclick = () => { currentPage--; renderTable(); };
     nextBtn.onclick = () => { currentPage++; renderTable(); };
+
     footer.appendChild(document.createElement("br"));
     footer.appendChild(prevBtn);
     footer.appendChild(nextBtn);
@@ -179,11 +158,7 @@ function renderTable() {
 function applyMagnitudeFilter() {
   const activeRanges = Array.from(document.querySelectorAll(".mag-btn.active"))
     .map(btn => btn.dataset.range);
-
-  if (activeRanges.length === 0) {
-    filteredData = fullData;
-    return;
-  }
+  if (activeRanges.length === 0) { filteredData = fullData; return; }
 
   filteredData = fullData.filter(ev => {
     const mag = parseFloat(ev.magnitude);
@@ -202,14 +177,12 @@ function applyMagnitudeFilter() {
 async function fetchAndRender() {
   clearError();
   showSpinner();
-
   const params = buildParams();
   const url = `${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`;
 
   try {
     const r = await fetch(url);
     const json = await r.json().catch(() => ({}));
-
     if (!r.ok || json.success === false) {
       const detail = json?.detail || `HTTP ${r.status}`;
       renderError(`${json?.code || "ERROR"}: ${detail}`);
@@ -218,9 +191,12 @@ async function fetchAndRender() {
 
     fullData = normalizeToList(json);
 
-    // 🔹 Yeni: güvenli zaman damgasına göre sırala (en yeni → en eski)
-    fullData.forEach(e => { e.__ts = getEventTime(e); });
-    fullData.sort((a, b) => b.__ts - a.__ts);
+    // 🔹 Gerçek tarih alanına göre sırala (en yeni üstte)
+    fullData.sort((a, b) => {
+      const ta = new Date(getEventTime(a));
+      const tb = new Date(getEventTime(b));
+      return tb - ta;
+    });
 
     applyMagnitudeFilter();
     currentPage = 1;
@@ -234,8 +210,7 @@ async function fetchAndRender() {
 
 // ===================== OLAYLAR =====================
 function setupMagnitudeButtons() {
-  const buttons = document.querySelectorAll(".mag-btn");
-  buttons.forEach(btn => {
+  document.querySelectorAll(".mag-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       btn.classList.toggle("active");
       applyMagnitudeFilter();
@@ -244,6 +219,7 @@ function setupMagnitudeButtons() {
     });
   });
 }
+
 function startAutoRefresh() {
   if (autoTimer) clearInterval(autoTimer);
   autoTimer = setInterval(fetchAndRender, autoRefreshMS);
