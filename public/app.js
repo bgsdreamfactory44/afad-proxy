@@ -4,9 +4,8 @@ function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD tarih formatı (Z yok, yerel saat destekli)
 function toAfadTime(d) {
-  const tzOffset = d.getTimezoneOffset() * 60000;
-  const localTime = new Date(d - tzOffset);
-  return localTime.toISOString().split(".")[0]; // "T" korundu — AFAD bunu kabul ediyor
+  // AFAD zaten yerel saat döndürüyor, offset uygulanmamalı
+  return d.toISOString().split(".")[0].replace("T", " ");
 }
 
 // Global değişkenler
