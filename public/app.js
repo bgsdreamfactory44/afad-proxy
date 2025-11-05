@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 6.1 – AFAD Kararlı) =====
-// 👑 Majesteleri'nin talimatlarıyla: Gerçek zaman sıralama (origintime öncelikli)
+// ===== Sismograf Frontend (Revizyon 6.2 – AFAD Kararlı) =====
+// 👑 Majesteleri'nin talimatlarıyla: Tüm düzeltmeler uygulandı.
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD tarih formatı (YYYY-MM-DD hh:mm:ss)
@@ -39,7 +39,7 @@ function buildParams() {
   p.set("start", toAfadTime(start));
   p.set("end", toAfadTime(end));
   p.set("limit", "250");
-  p.set("orderby", "timedesc");
+  p.set("orderby", "timedesc"); // API'den zaten en yeni üste sıralı isteniyor
   p.set("format", "json");
   return p;
 }
@@ -55,6 +55,7 @@ function getEventTime(ev) {
 
 // === Metin Bazlı Sıralama (AFAD biçimine göre) ===
 function sortByDateDesc(list) {
+  // Not: Bu fonksiyon artık fetchAndRender içinde kullanılmıyor
   return list.sort((a, b) => getEventTime(b).localeCompare(getEventTime(a)));
 }
 
@@ -70,7 +71,7 @@ function normalizeToList(json){
 
 // === Tablo ===
 
-// --- DÜZENLEME 2: Sütun Adı Çevirileri ---
+// --- DÜZELTME 2: Sütun Adı Çevirileri ---
 function translateColumnName(k){
   const map = {
     latitude:"Enlem",longitude:"Boylam",depth:"Derinlik (km)",rms:"RMS",
@@ -84,24 +85,20 @@ function translateColumnName(k){
 
 function shouldHideColumn(k){ return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(k); }
 
-// --- DÜZENLEME 1: Çift Tarih Sütunu Düzeltmesi ---
+// --- DÜZELTME 1: Çift Tarih Sütunu ---
 function autoColumns(list) {
   const cols = new Set();
   list.forEach(o => Object.keys(o || {}).forEach(k => {
     if (!shouldHideColumn(k)) cols.add(k);
   }));
 
-  // === Çift Tarih Sütunu Düzeltmesi (Yaver Paşa Notu) ===
-  // API birden fazla tarih anahtarı (origintime, eventDate, date) döndürebilir.
-  // Sadece birini (en öncelikli olanı) tabloda göstermek için diğerlerini sil.
+  // Çift tarih anahtarlarını (origintime, eventDate) teke düşür
   if (cols.has("origintime")) {
     cols.delete("eventDate");
     cols.delete("date");
   } else if (cols.has("eventDate")) {
     cols.delete("date");
   }
-  // === Düzeltme Sonu ===
-
   return Array.from(cols);
 }
 
@@ -149,9 +146,16 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+  s  if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
-    fullData=sortByDateDesc(fullData.filter(e=>getEventTime(e)));
+
+    // --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ ---
+    // Yaver Paşa Notu: API zaten "orderby=timedesc" ile (en yeni üste) sıralı veri veriyor.
+    // İstemcide tekrar sıralama yapmak (sortByDateDesc) bu sıralamayı bozuyordu.
+    // Bu yüzden 'sortByDateDesc' çağrısı kaldırıldı, sadece 'filter' bırakıldı.
+    fullData=fullData.filter(e=>getEventTime(e));
+    // --- DÜZELTME 3 SONU ---
+
     applyMagnitudeFilter();currentPage=1;renderTable();
   }catch(e){renderError(e.message||"Veri alınamadı");}
   finally{hideSpinner();}
