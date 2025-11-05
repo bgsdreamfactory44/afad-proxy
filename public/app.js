@@ -69,35 +69,41 @@ function normalizeToList(json){
 }
 
 // === Tablo ===
+
+// --- BURASI DÜZENLENDİ, PADİŞAHIM (Çeviri Eklendi) ---
 function translateColumnName(k){
   const map = {
     latitude:"Enlem",longitude:"Boylam",depth:"Derinlik (km)",rms:"RMS",
     location:"Konum",magnitude:"Şiddet",province:"Şehir",district:"İlçe",
-    date:"Tarih",eventDate:"Tarih",origintime:"Tarih"
+    date:"Tarih",eventDate:"Tarih",origintime:"Tarih",
+    country:"Ülke", // Yeni eklendi
+    neighborhood:"Bölge" // Yeni eklendi
   };
   return map[k] || k;
 }
+// --- DÜZENLEME BİTTİ ---
+
 function shouldHideColumn(k){ return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(k); }
 
 // --- ÇİFT TARİH SÜTUNU DÜZELTMESİ ---
 function autoColumns(list) {
-  const cols = new Set();
-  list.forEach(o => Object.keys(o || {}).forEach(k => {
-    if (!shouldHideColumn(k)) cols.add(k);
-  }));
+  const cols = new Set();
+  list.forEach(o => Object.keys(o || {}).forEach(k => {
+    if (!shouldHideColumn(k)) cols.add(k);
+  }));
 
-  // === Çift Tarih Sütunu Düzeltmesi (Yaver Paşa Notu) ===
-  // API birden fazla tarih anahtarı (origintime, eventDate, date) döndürebilir.
-  // Sadece birini (en öncelikli olanı) tabloda göstermek için diğerlerini sil.
-  if (cols.has("origintime")) {
-    cols.delete("eventDate");
-    cols.delete("date");
-  } else if (cols.has("eventDate")) {
-    cols.delete("date");
-  }
-  // === Düzeltme Sonu ===
+  // === Çift Tarih Sütunu Düzeltmesi (Yaver Paşa Notu) ===
+  // API birden fazla tarih anahtarı (origintime, eventDate, date) döndürebilir.
+  // Sadece birini (en öncelikli olanı) tabloda göstermek için diğerlerini sil.
+  if (cols.has("origintime")) {
+    cols.delete("eventDate");
+    cols.delete("date");
+  } else if (cols.has("eventDate")) {
+    cols.delete("date");
+  }
+  // === Düzeltme Sonu ===
 
-  return Array.from(cols);
+  return Array.from(cols);
 }
 // --- DÜZENLEME BİTTİ ---
 
@@ -127,7 +133,7 @@ function renderPagination(){
     next.onclick=()=>{currentPage++;renderTable();};
     footer.appendChild(document.createElement("br"));
     footer.appendChild(prev);footer.appendChild(next);
-  }
+s  }
 }
 
 // === Tablo Güncelle ===
@@ -145,7 +151,7 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+s    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
     fullData=sortByDateDesc(fullData.filter(e=>getEventTime(e)));
     applyMagnitudeFilter();currentPage=1;renderTable();
