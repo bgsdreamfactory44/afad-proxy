@@ -1,12 +1,12 @@
-// ===== Sismograf Frontend (Revizyon 5.7) =====
-// 👑 Majesteleri'nin talimatlarıyla: AFAD tam tarih uyumu + doğru sıralama
+// ===== Sismograf Frontend (Revizyon 5.8 - Kararlı) =====
+// 👑 Majesteleri'nin talimatlarıyla: Gerçek zaman sıralama ve AFAD tarih uyumu
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD tarih formatı: YYYY-MM-DD hh:mm:ss (Z yok, yerel saat)
+// 🧭 AFAD tarih formatı (Z yok, yerel saat destekli)
 function toAfadTime(d) {
   const tzOffset = d.getTimezoneOffset() * 60000;
   const localTime = new Date(d - tzOffset);
-  return localTime.toISOString().split(".")[0].replace("T", " ");
+  return localTime.toISOString().split(".")[0]; // "T" korundu — AFAD bunu kabul ediyor
 }
 
 // Global değişkenler
@@ -37,7 +37,6 @@ function hideSpinner() {
 function buildParams() {
   const p = new URLSearchParams();
   const limit = 2500;
-
   const startInput = qsel("startDate")?.value;
   const endInput = qsel("endDate")?.value;
   const end = endInput ? new Date(endInput) : new Date();
@@ -67,7 +66,7 @@ function translateColumnName(key) {
 }
 
 function shouldHideColumn(key) {
-  return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(key);
+  return ["eventid", "eventID", "type", "isEventUpdate", "lastUpdateDate", "__ts"].includes(key);
 }
 
 function autoColumns(list) {
@@ -106,7 +105,7 @@ function setRows(cols, list) {
   });
 }
 
-// ===================== AFAD VERİSİNİ NORMALİZE ET =====================
+// ===================== VERİ NORMALİZE =====================
 function normalizeToList(json) {
   const d = json?.data;
   if (Array.isArray(d)) return d;
@@ -117,9 +116,9 @@ function normalizeToList(json) {
   return [];
 }
 
-// ===================== DOĞRU TARİH ALANINI BUL =====================
+// ===================== TARİH TESPİTİ =====================
 function getEventTime(ev) {
-  return ev.origintime || ev.eventDate || ev.date || ev.time || ev.EventDate || null;
+  return ev.origintime || ev.eventDate || ev.date || ev.time || null;
 }
 
 // ===================== SAYFALAMA =====================
@@ -145,7 +144,7 @@ function renderPagination() {
   }
 }
 
-// ===================== TABLOYU GÜNCELLE =====================
+// ===================== TABLO GÜNCELLE =====================
 function renderTable() {
   const list = filteredData.slice((currentPage - 1) * perPage, currentPage * perPage);
   const cols = autoColumns(list);
@@ -191,10 +190,10 @@ async function fetchAndRender() {
 
     fullData = normalizeToList(json);
 
-    // 🔹 Gerçek tarih alanına göre sırala (en yeni üstte)
-    fullData.sort((a, b) => {
-      const ta = new Date(getEventTime(a));
-      const tb = new Date(getEventTime(b));
+    // 🔹 Gerçek tarih alanına göre doğru sıralama (null hariç)
+    fullData = fullData.filter(e => getEventTime(e)).sort((a, b) => {
+      const ta = new Date(getEventTime(a)).getTime() || 0;
+      const tb = new Date(getEventTime(b)).getTime() || 0;
       return tb - ta;
     });
 
