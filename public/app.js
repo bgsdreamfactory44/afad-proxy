@@ -1,11 +1,11 @@
-// ===== Sismograf Frontend (Revizyon 5.8 - Kararlı) =====
-// 👑 Majesteleri'nin talimatlarıyla: Gerçek zaman sıralama ve AFAD tarih uyumu
+// ===== Sismograf Frontend (Revizyon 5.9 – AFAD Kararlı) =====
+// 👑 Majesteleri'nin talimatlarıyla: AFAD tam tarih uyumu + doğru sıralama (metin bazlı)
 function qsel(id) { return document.getElementById(id); }
 
-// 🧭 AFAD tarih formatı (Z yok, yerel saat destekli)
+// 🧭 AFAD tarih formatı: YYYY-MM-DD hh:mm:ss
 function toAfadTime(d) {
-  // AFAD zaten yerel saat döndürüyor, offset uygulanmamalı
-  return d.toISOString().split(".")[0].replace("T", " ");
+  const pad = n => n.toString().padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 // Global değişkenler
@@ -26,10 +26,9 @@ function showSpinner() {
   }
   status.querySelector(".spinner").style.display = "inline-block";
 }
-
 function hideSpinner() {
-  const spinner = qsel("status").querySelector(".spinner");
-  if (spinner) spinner.style.display = "none";
+  const s = qsel("status").querySelector(".spinner");
+  if (s) s.style.display = "none";
 }
 
 // ===================== PARAM HAZIRLAMA =====================
@@ -57,25 +56,23 @@ function clearError() { qsel("errorBox").textContent = ""; }
 function translateColumnName(key) {
   const map = {
     latitude: "Enlem", longitude: "Boylam", depth: "Derinlik (km)",
-    rms: "RMS (Ölçüm Doğruluğu)", location: "Konum", magnitude: "Şiddet",
-    country: "Ülke", province: "Şehir", district: "İlçe",
-    neighborhood: "Bölge", date: "Tarih", eventDate: "Tarih"
+    rms: "RMS (Doğruluk)", location: "Konum", magnitude: "Şiddet",
+    province: "Şehir", district: "İlçe", date: "Tarih",
+    eventDate: "Tarih", origintime: "Tarih"
   };
   return map[key] || key;
 }
 
 function shouldHideColumn(key) {
-  return ["eventid", "eventID", "type", "isEventUpdate", "lastUpdateDate", "__ts"].includes(key);
+  return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(key);
 }
-
 function autoColumns(list) {
   const cols = new Set();
-  list.forEach(obj => Object.keys(obj || {}).forEach(k => {
+  list.forEach(o => Object.keys(o || {}).forEach(k => {
     if (!shouldHideColumn(k)) cols.add(k);
   }));
   return Array.from(cols);
 }
-
 function setHeader(cols) {
   const thead = qsel("thead");
   thead.innerHTML = "";
@@ -87,7 +84,6 @@ function setHeader(cols) {
   });
   thead.appendChild(tr);
 }
-
 function setRows(cols, list) {
   const tbody = qsel("tbody");
   tbody.innerHTML = "";
@@ -95,9 +91,9 @@ function setRows(cols, list) {
     const tr = document.createElement("tr");
     cols.forEach(c => {
       const td = document.createElement("td");
-      let val = obj && Object.prototype.hasOwnProperty.call(obj, c) ? obj[c] : "";
+      let val = obj?.[c] ?? "";
       if (typeof val === "object" && val !== null) val = JSON.stringify(val);
-      td.textContent = val ?? "";
+      td.textContent = val;
       tr.appendChild(td);
     });
     tbody.appendChild(tr);
@@ -115,9 +111,19 @@ function normalizeToList(json) {
   return [];
 }
 
-// ===================== TARİH TESPİTİ =====================
+// ===================== TARİH ALANI =====================
 function getEventTime(ev) {
-  return ev.origintime || ev.eventDate || ev.date || ev.time || null;
+  return ev.origintime || ev.eventDate || ev.date || ev.time || "";
+}
+
+// ===================== SIRALAMA (METİN BAZLI) =====================
+function sortByDateDesc(list) {
+  return list.sort((a, b) => {
+    const ta = getEventTime(a);
+    const tb = getEventTime(b);
+    // AFAD zaten yyyy-mm-dd hh:mm:ss formatında döndürüyor → string karşılaştırması güvenli
+    return tb.localeCompare(ta);
+  });
 }
 
 // ===================== SAYFALAMA =====================
@@ -125,21 +131,14 @@ function renderPagination() {
   const totalPages = Math.ceil(filteredData.length / perPage);
   const footer = document.querySelector("footer");
   footer.innerHTML = `<small>Sayfa ${currentPage}/${totalPages} • Toplam ${filteredData.length} kayıt</small>`;
-
   if (totalPages > 1) {
-    const prevBtn = document.createElement("button");
-    const nextBtn = document.createElement("button");
-    prevBtn.textContent = "← Önceki";
-    nextBtn.textContent = "Sonraki →";
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage === totalPages;
-
-    prevBtn.onclick = () => { currentPage--; renderTable(); };
-    nextBtn.onclick = () => { currentPage++; renderTable(); };
-
+    const prev = document.createElement("button"), next = document.createElement("button");
+    prev.textContent = "← Önceki"; next.textContent = "Sonraki →";
+    prev.disabled = currentPage === 1; next.disabled = currentPage === totalPages;
+    prev.onclick = () => { currentPage--; renderTable(); };
+    next.onclick = () => { currentPage++; renderTable(); };
     footer.appendChild(document.createElement("br"));
-    footer.appendChild(prevBtn);
-    footer.appendChild(nextBtn);
+    footer.appendChild(prev); footer.appendChild(next);
   }
 }
 
@@ -147,58 +146,41 @@ function renderPagination() {
 function renderTable() {
   const list = filteredData.slice((currentPage - 1) * perPage, currentPage * perPage);
   const cols = autoColumns(list);
-  setHeader(cols);
-  setRows(cols, list);
-  renderPagination();
+  setHeader(cols); setRows(cols, list); renderPagination();
 }
 
 // ===================== ŞİDDET FİLTRESİ =====================
 function applyMagnitudeFilter() {
-  const activeRanges = Array.from(document.querySelectorAll(".mag-btn.active"))
-    .map(btn => btn.dataset.range);
-  if (activeRanges.length === 0) { filteredData = fullData; return; }
-
+  const active = Array.from(document.querySelectorAll(".mag-btn.active")).map(b => b.dataset.range);
+  if (!active.length) { filteredData = fullData; return; }
   filteredData = fullData.filter(ev => {
-    const mag = parseFloat(ev.magnitude);
-    return activeRanges.some(r => {
-      if (r === "0-2") return mag >= 0 && mag < 2;
-      if (r === "2-4") return mag >= 2 && mag < 4;
-      if (r === "4-6") return mag >= 4 && mag < 6;
-      if (r === "6-8") return mag >= 6 && mag < 8;
-      if (r === "8+")  return mag >= 8;
-      return false;
-    });
+    const m = parseFloat(ev.magnitude);
+    return active.some(r =>
+      (r === "0-2" && m < 2) ||
+      (r === "2-4" && m >= 2 && m < 4) ||
+      (r === "4-6" && m >= 4 && m < 6) ||
+      (r === "6-8" && m >= 6 && m < 8) ||
+      (r === "8+" && m >= 8)
+    );
   });
 }
 
 // ===================== VERİ ÇEKME =====================
 async function fetchAndRender() {
-  clearError();
-  showSpinner();
+  clearError(); showSpinner();
   const params = buildParams();
   const url = `${API_BASE}?${params.toString()}&nocache=true&_t=${Date.now()}`;
-
   try {
     const r = await fetch(url);
     const json = await r.json().catch(() => ({}));
     if (!r.ok || json.success === false) {
-      const detail = json?.detail || `HTTP ${r.status}`;
-      renderError(`${json?.code || "ERROR"}: ${detail}`);
+      const d = json?.detail || `HTTP ${r.status}`;
+      renderError(`${json?.code || "ERROR"}: ${d}`);
       return;
     }
-
     fullData = normalizeToList(json);
-
-    // 🔹 Gerçek tarih alanına göre doğru sıralama (null hariç)
-    fullData = fullData.filter(e => getEventTime(e)).sort((a, b) => {
-      const ta = new Date(getEventTime(a)).getTime() || 0;
-      const tb = new Date(getEventTime(b)).getTime() || 0;
-      return tb - ta;
-    });
-
-    applyMagnitudeFilter();
-    currentPage = 1;
-    renderTable();
+    fullData = sortByDateDesc(fullData.filter(e => getEventTime(e)));
+    applyMagnitudeFilter(); currentPage = 1; renderTable();
   } catch (e) {
     renderError(e.message || "Veri alınamadı");
   } finally {
@@ -217,7 +199,6 @@ function setupMagnitudeButtons() {
     });
   });
 }
-
 function startAutoRefresh() {
   if (autoTimer) clearInterval(autoTimer);
   autoTimer = setInterval(fetchAndRender, autoRefreshMS);
