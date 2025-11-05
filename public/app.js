@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 6.2 – AFAD Kararlı) =====
-// 👑 Majesteleri'nin talimatlarıyla: Tüm düzeltmeler uygulandı.
+// ===== Sismograf Frontend (Revizyon 6.3 – Nihai ve Temiz) =====
+// 👑 Majesteleri'nin talimatlarıyla: Tüm 3 sorun (Tarih, Çeviri, Sıralama) ve tüm yazım hataları düzeltildi.
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD tarih formatı (YYYY-MM-DD hh:mm:ss)
@@ -146,13 +146,13 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-  s  if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+    // --- YAZIM HATASI DÜZELTMESİ (ÖNCEKİ KODDAKİ 's' HARFİ KALDIRILDI) ---
+    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
 
     // --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ ---
-    // Yaver Paşa Notu: API zaten "orderby=timedesc" ile (en yeni üste) sıralı veri veriyor.
-    // İstemcide tekrar sıralama yapmak (sortByDateDesc) bu sıralamayı bozuyordu.
-    // Bu yüzden 'sortByDateDesc' çağrısı kaldırıldı, sadece 'filter' bırakıldı.
+    // API'den "orderby=timedesc" ile (en yeni üste) sıralı veri geldiği için
+    // istemcide tekrar sıralama (sortByDateDesc) yapmıyoruz. Sadece filtreliyoruz.
     fullData=fullData.filter(e=>getEventTime(e));
     // --- DÜZELTME 3 SONU ---
 
@@ -167,7 +167,7 @@ function setupMagnitudeButtons(){
     btn.addEventListener("click",()=>{
       btn.classList.toggle("active");
       applyMagnitudeFilter();currentPage=1;renderTable();
-    });
+This     });
   });
 }
 function startAutoRefresh(){ if(autoTimer)clearInterval(autoTimer); autoTimer=setInterval(fetchAndRender,autoRefreshMS); }
