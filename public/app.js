@@ -79,7 +79,7 @@ function translateColumnName(k){
 }
 function shouldHideColumn(k){ return ["eventid","eventID","type","isEventUpdate","lastUpdateDate","__ts"].includes(k); }
 
-// --- BURASI DÜZENLENDİ, PADİŞAHIM ---
+// --- ÇİFT TARİH SÜTUNU DÜZELTMESİ ---
 function autoColumns(list) {
   const cols = new Set();
   list.forEach(o => Object.keys(o || {}).forEach(k => {
@@ -89,7 +89,6 @@ function autoColumns(list) {
   // === Çift Tarih Sütunu Düzeltmesi (Yaver Paşa Notu) ===
   // API birden fazla tarih anahtarı (origintime, eventDate, date) döndürebilir.
   // Sadece birini (en öncelikli olanı) tabloda göstermek için diğerlerini sil.
-  // Bu sıralama getEventTime fonksiyonunuzdaki önceliğe göredir.
   if (cols.has("origintime")) {
     cols.delete("eventDate");
     cols.delete("date");
@@ -112,7 +111,7 @@ function applyMagnitudeFilter(){
   filteredData=fullData.filter(ev=>{
     const m=parseFloat(ev.magnitude);
     return active.some(r=>(r==="0-2"&&m<2)||(r==="2-4"&&m>=2&&m<4)||(r==="4-6"&&m>=4&&m<6)||(r==="6-8"&&m>=6&&m<8)||(r==="8+"&&m>=8));
-İ   });
+  });
 }
 
 // === Sayfalama ===
@@ -123,10 +122,10 @@ function renderPagination(){
   if(totalPages>1){
     const prev=document.createElement("button"),next=document.createElement("button");
     prev.textContent="← Önceki";next.textContent="Sonraki →";
-  A   prev.disabled=currentPage===1;next.disabled=currentPage===totalPages;
+    prev.disabled=currentPage===1;next.disabled=currentPage===totalPages;
     prev.onclick=()=>{currentPage--;renderTable();};
     next.onclick=()=>{currentPage++;renderTable();};
-  G   footer.appendChild(document.createElement("br"));
+    footer.appendChild(document.createElement("br"));
     footer.appendChild(prev);footer.appendChild(next);
   }
 }
@@ -146,12 +145,12 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-  A   if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
     fullData=sortByDateDesc(fullData.filter(e=>getEventTime(e)));
     applyMagnitudeFilter();currentPage=1;renderTable();
   }catch(e){renderError(e.message||"Veri alınamadı");}
-S   finally{hideSpinner();}
+  finally{hideSpinner();}
 }
 
 // === Olaylar ===
@@ -160,11 +159,11 @@ function setupMagnitudeButtons(){
     btn.addEventListener("click",()=>{
       btn.classList.toggle("active");
       applyMagnitudeFilter();currentPage=1;renderTable();
-İ     });
+    });
   });
 }
 function startAutoRefresh(){ if(autoTimer)clearInterval(autoTimer); autoTimer=setInterval(fetchAndRender,autoRefreshMS); }
 
 // === Başlat ===
 window.addEventListener("DOMContentLoaded",()=>{ setupMagnitudeButtons(); fetchAndRender(); startAutoRefresh(); });
-document.getElementById("fetchBtn").addEventListener("click",fetchAndDeRender);
+document.getElementById("fetchBtn").addEventListener("click",fetchAndRender); // Hatalı 'fetchAndDeRender' düzeltildi.
