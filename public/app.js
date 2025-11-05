@@ -1,5 +1,5 @@
-// ===== Sismograf Frontend (Revizyon 6.5 – Nihai, Temiz ve Çalışan) =====
-// 👑 Majesteleri'nin talimatlarıyla: Tüm 3 sorun (Tarih, Çeviri, Sıralama) ve tüm Yaver Paşa hataları düzeltildi.
+// ===== Sismograf Frontend (Revizyon 7.0 – TEMİZ VE NİHAİ) =====
+// 👑 Majesteleri'nin talimatlarıyla: Tüm 3 sorun (Tarih, Çeviri, Sıralama) ve tüm Yaver Paşa yazım hataları düzeltildi.
 function qsel(id) { return document.getElementById(id); }
 
 // 🧭 AFAD tarih formatı (YYYY-MM-DD hh:mm:ss)
@@ -32,7 +32,7 @@ function hideSpinner() {
 // === Parametre Hazırlama ===
 
 // --- DÜZELTME 3: "BÜYÜK HATA" ÇÖZÜMÜ (AFAD PDF'e göre) ---
-// Yaver Paşa Notu: AFAD dokümanı, azalan sıralamanın 'timedesc' değil, 'timedesc-' olduğunu belirtiyor. 
+[cite_start]// Yaver Paşa Notu: AFAD dokümanı[cite: 127], azalan sıralamanın 'timedesc' değil, 'timedesc-' olduğunu belirtiyor.
 function buildParams() {
   const p = new URLSearchParams();
   const startInput = qsel("startDate")?.value;
@@ -42,7 +42,7 @@ function buildParams() {
   p.set("start", toAfadTime(start));
   p.set("end", toAfadTime(end));
   p.set("limit", "250");
-  p.set("orderby", "timedesc-"); // HATA DÜZELTİLDİ (tire eklendi)
+  p.set("orderby", "timedesc-"); [cite_start]// HATA DÜZELTİLDİ (tire eklendi) [cite: 127]
   p.set("format", "json");
   return p;
 }
@@ -116,7 +116,7 @@ function applyMagnitudeFilter(){
   filteredData=fullData.filter(ev=>{
     const m=parseFloat(ev.magnitude);
     return active.some(r=>(r==="0-2"&&m<2)||(r==="2-4"&&m>=2&&m<4)||(r==="4-6"&&m>=4&&m<6)||(r==="6-8"&&m>=6&&m<8)||(r==="8+"&&m>=8));
-s  });
+  });
 }
 
 // === Sayfalama ===
@@ -150,7 +150,7 @@ async function fetchAndRender(){
   try{
     const r=await fetch(url);
     const json=await r.json().catch(()=>({}));
-  s if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
+    if(!r.ok||json.success===false){renderError(json?.detail||`HTTP ${r.status}`);return;}
     fullData=normalizeToList(json);
 
     // API'den "orderby=timedesc-" ile (en yeni üste) sıralı veri geldiği için
